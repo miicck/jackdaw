@@ -1,7 +1,11 @@
+import os.path
+
 from Gi import Gtk, Gdk
 import cairo
 from UI.MidiEditor import MidiEditor
+from UI.MidiNote import MidiNote
 from UI.Colors import Colors
+from Project import Filestructure as FS
 
 
 class PlaylistClip(Gtk.DrawingArea):
@@ -51,3 +55,41 @@ class PlaylistClip(Gtk.DrawingArea):
         context.set_source_rgb(0.0, 0.0, 0.0)
         context.move_to(1, font_size)
         context.show_text(f"{self.clip_number}")
+
+        self.draw_midi_preview(area, context)
+
+    def draw_midi_preview(self, area: Gtk.DrawingArea, context: cairo.Context):
+
+        filename = f"{FS.DATA_DIR}/midi/{self.clip_number}.jdm"
+        if not os.path.isfile(filename):
+            return
+
+        # Midi drawing area has a 1px borer
+        width = area.get_allocated_width() - 2
+        height = area.get_allocated_height() - 2
+
+        # Read the notes from the file
+        notes = []
+        with open(filename, "r") as f:
+            for line in f:
+                name, beat = MidiNote.load_from_line(line)
+                index = MidiEditor.note_name_to_index(name)
+                notes.append((index, beat))
+
+        # No notes to draw
+        if len(notes) == 0:
+            return
+
+        # Sort notes by index/get effective index range
+        notes.sort()
+        min_index = notes[0][0] - 1
+        max_index = notes[-1][0] + 1
+
+        context.set_source_rgb(*Colors.playlist_midi_note)
+        for index, beat in notes:
+            # How far up the index range this note is
+            frac = (index - min_index) / (max_index - min_index)
+            y = int((1 - frac) * height)
+            x = int(beat * width / 4)
+            context.rectangle(x + 1, y + 1, width // 4, height // (max_index - min_index))
+        context.fill()

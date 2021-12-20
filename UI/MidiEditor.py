@@ -42,6 +42,16 @@ class MidiEditor(Gtk.Window):
         if clip_number in MidiEditor.open_editors:
             MidiEditor.open_editors[clip_number].destroy()
 
+    @staticmethod
+    def note_name_to_index(name: str):
+        if "#" in name:
+            octave = int(name[2:])
+            note = name[:2]
+        else:
+            octave = int(name[1:])
+            note = name[0]
+        return octave * 12 + MusicTheory.NOTES.index(note)
+
     def __init__(self, clip_number: int):
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 
@@ -58,6 +68,9 @@ class MidiEditor(Gtk.Window):
                 name = f"{note}{octave}"
                 self.key_indicies[name] = len(self.keys)
                 self.keys.append(name)
+
+        for name in self.key_indicies:
+            assert self.key_indicies[name] == MidiEditor.note_name_to_index(name)
 
         # Setup widget structure
         scroll_area = Gtk.ScrolledWindow()
