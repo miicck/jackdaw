@@ -129,9 +129,14 @@ class MidiEditor(Gtk.Window):
     def save_to_file(self):
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, "w") as f:
-            for c in self.notes_area.get_children():
-                if isinstance(c, MidiNote):
-                    f.write(c.save_to_line() + "\n")
+            for c in self.notes:
+                f.write(c.save_to_line() + "\n")
+
+    @property
+    def notes(self):
+        for c in self.notes_area.get_children():
+            if isinstance(c, MidiNote):
+                yield c
 
     def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         height = area.get_allocated_height()
@@ -149,7 +154,7 @@ class MidiEditor(Gtk.Window):
 
         note = note.strip().upper()
         if note not in self.key_indicies:
-            raise MidiEditor.NoteOutOfRangeException()
+            raise MidiEditor.NoteOutOfRangeException(note)
 
         # Get the y position of the given note
         height = self.notes_area.get_allocated_height()

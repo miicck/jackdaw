@@ -6,9 +6,10 @@ from Project import Filestructure as FS
 
 class UiTestSession:
 
-    def __init__(self, main_loop_ms=100, pause_after_ms=100):
-        TimeControl.play()
+    def __init__(self, main_loop_ms=100, pause_after_ms=100, save_project=False):
         self.pause_after_ms = pause_after_ms
+        self.save_project = save_project
+        TimeControl.play()
         Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, main_loop_ms, self.stop_session, None)
 
     def stop_session(self, e):
@@ -28,7 +29,9 @@ class UiTestSession:
         start_main_loop()
         TimeControl.stop()
         time.sleep(self.pause_after_ms / 1000.0)
-        FS.delete_project_in_current_dir()
+
+        if not self.save_project:
+            FS.delete_project_in_current_dir()
 
     close_methods = set()
 
