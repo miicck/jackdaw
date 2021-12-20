@@ -124,7 +124,7 @@ class MidiEditor(Gtk.Window):
     def load_from_file(self):
         with open(self.filename, "r") as f:
             for line in f:
-                self.add_note(*MidiNote.load_from_line(line))
+                self.add_note(*MidiNote.load_from_line(line), autosave=False)
 
     def save_to_file(self):
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
@@ -145,7 +145,7 @@ class MidiEditor(Gtk.Window):
         beat = (int(button.x) // self.sub_beat_width) / 4.0
         self.add_note(self.keys[key_index], beat)
 
-    def add_note(self, note: str, beat: float):
+    def add_note(self, note: str, beat: float, autosave=True):
 
         note = note.strip().upper()
         if note not in self.key_indicies:
@@ -166,7 +166,8 @@ class MidiEditor(Gtk.Window):
         self.notes_area.put(note, self.beat_width * beat + 1, y)
         self.notes_area.show_all()
 
-        self.save_to_file()
+        if autosave:
+            self.save_to_file()
 
         return note
 

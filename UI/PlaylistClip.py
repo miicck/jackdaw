@@ -6,9 +6,11 @@ from UI.Colors import Colors
 
 class PlaylistClip(Gtk.DrawingArea):
 
-    def __init__(self, clip_number):
+    def __init__(self, clip_number, track: int, beat: float):
         super().__init__()
         self.clip_number = clip_number
+        self.track = track
+        self.beat = beat
         self.connect("draw", self.draw_clip)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect("button-press-event", self.on_click)
@@ -27,6 +29,14 @@ class PlaylistClip(Gtk.DrawingArea):
 
     def open_midi_editor(self):
         return MidiEditor.open(self.clip_number)
+
+    def save_to_line(self) -> str:
+        return f"{self.clip_number} {self.track} {self.beat}"
+
+    @staticmethod
+    def load_from_line(line: str) -> [int, int, float]:
+        line = line.split()
+        return int(line[0]), int(line[1]), float(line[2])
 
     def draw_clip(self, area: Gtk.DrawingArea, context: cairo.Context):
         width = area.get_allocated_width()

@@ -1,3 +1,5 @@
+import os.path
+
 from Gi import Gtk, Gdk
 import cairo
 from UI.Drawing import draw_background_grid
@@ -5,6 +7,7 @@ from UI.PlaylistClip import PlaylistClip
 from UI.Playhead import Playhead
 from TimeControl import TimeControl
 from Test.Utils.UiTestSession import UiTestSession
+from Project import Filestructure as FS
 
 
 class Playlist(Gtk.Window):
@@ -66,6 +69,24 @@ class Playlist(Gtk.Window):
         self.show_all()
         self.connect("destroy", self.on_destroy)
 
+        # Saving/loading
+        self.filename = f"{FS.DATA_DIR}/playlist.jdp"
+        if os.path.isfile(self.filename):
+            self.load_from_file()
+        else:
+            self.save_to_file()
+
+    def load_from_file(self):
+        with open(self.filename, "r") as f:
+            for line in f:
+                self.create_clip(*PlaylistClip.load_from_line(line), autosave=False)
+
+    def save_to_file(self):
+        with open(self.filename, "w") as f:
+            for c in self.clips_area.get_children():
+                if isinstance(c, PlaylistClip):
+                    f.write(c.save_to_line() + "\n")
+
     def on_destroy(self, e):
         Playlist.open_playlist = None
 
@@ -77,13 +98,17 @@ class Playlist(Gtk.Window):
         # Get beat/track position
         track = int(button.y) // self.track_height
         beat = int(button.x) // self.beat_width
-        self.create_clip(track, beat, 1)
+        self.create_clip(1, track, beat)
 
-    def create_clip(self, track: int, beat: float, number: int):
-        clip = PlaylistClip(number)
+    def create_clip(self, number: int, track: int, beat: float, autosave=True):
+        clip = PlaylistClip(number, track, beat)
         clip.set_size_request(self.bar_width, self.track_height)
         self.clips_area.put(clip, beat * self.beat_width, track * self.track_height)
         self.clips_area.show_all()
+
+        if autosave:
+            self.save_to_file()
+
         return clip
 
     @property
