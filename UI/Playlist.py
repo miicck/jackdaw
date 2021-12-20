@@ -82,6 +82,7 @@ class Playlist(Gtk.Window):
                 self.create_clip(*PlaylistClip.load_from_line(line), autosave=False)
 
     def save_to_file(self):
+        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, "w") as f:
             for c in self.clips_area.get_children():
                 if isinstance(c, PlaylistClip):
