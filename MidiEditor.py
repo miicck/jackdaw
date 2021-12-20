@@ -31,13 +31,17 @@ class MidiEditor(Gtk.Window):
         keyboard_area = Gtk.DrawingArea()
         keyboard_area.set_size_request(self.keyboard_depth, self.total_height)
         keyboard_area.connect("draw", self.draw_keyboard)
-        left_right_box.add(keyboard_area)
+        left_right_box.pack_start(keyboard_area, False, False, 0)
+
+        # The scrollable area containing notes
+        notes_scroll_area = Gtk.ScrolledWindow()
+        left_right_box.pack_start(notes_scroll_area, True, True, 0)
 
         # The bit containing the notes
         playlist_area = Gtk.DrawingArea()
         playlist_area.set_size_request(8192, self.total_height)
         playlist_area.connect("draw", self.draw_background)
-        left_right_box.add(playlist_area)
+        notes_scroll_area.add(playlist_area)
 
         self.show_all()
 
