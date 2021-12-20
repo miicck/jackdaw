@@ -1,8 +1,4 @@
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
-
+from Gi import Gtk, Gdk
 import cairo
 from Drawing import draw_background_grid
 from PlaylistClip import PlaylistClip
@@ -46,7 +42,7 @@ class Playlist(Gtk.Window):
         x = (int(button.x) // self.sub_beat_width) * self.sub_beat_width
         y = (int(button.y) // self.track_height) * self.track_height
 
-        clip = PlaylistClip()
+        clip = PlaylistClip(1)
         clip.set_size_request(self.bar_width, self.track_height)
         self.clips_area.put(clip, x, y)
         self.clips_area.show_all()

@@ -1,9 +1,4 @@
-import time
-
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from Gi import Gtk
 import cairo
 from typing import Callable
 from TimeControl import TimeControl

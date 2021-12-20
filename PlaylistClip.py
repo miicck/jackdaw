@@ -1,33 +1,38 @@
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from Gi import Gtk, Gdk
 import cairo
 from MidiEditor import MidiEditor
 
 
 class PlaylistClip(Gtk.DrawingArea):
 
-    def __init__(self):
+    def __init__(self, number):
         super().__init__()
-        self.connect("draw", self.draw_note)
+        self.number = number
+        self.connect("draw", self.draw_clip)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect("button-press-event", self.on_click)
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
+
         if button.button == Gdk.BUTTON_SECONDARY:
             # Destroy note on right click
             self.destroy()
             return
 
         if button.button == Gdk.BUTTON_PRIMARY:
-            MidiEditor(1)
+            # Open midi editor on left click
+            MidiEditor(self.number)
             return
 
-    def draw_note(self, area: Gtk.DrawingArea, context: cairo.Context):
+    def draw_clip(self, area: Gtk.DrawingArea, context: cairo.Context):
         width = area.get_allocated_width()
         height = area.get_allocated_height()
 
         context.set_source_rgba(1.0, 1.0, 1.0, 0.5)
         context.rectangle(0, 0, width, height)
         context.fill()
+
+        font_size = height // 5
+        context.set_font_size(font_size)
+        context.move_to(0, font_size)
+        context.show_text(f"Clip {self.number}")

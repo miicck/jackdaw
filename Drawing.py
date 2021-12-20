@@ -1,7 +1,4 @@
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from Gi import Gtk
 import cairo
 from Colors import Colors
 from typing import Callable
