@@ -1,12 +1,30 @@
 from Gi import Gtk, Gdk
 import cairo
-from Drawing import draw_background_grid
-from PlaylistClip import PlaylistClip
-from Playhead import Playhead
+from UI.Drawing import draw_background_grid
+from UI.PlaylistClip import PlaylistClip
+from UI.Playhead import Playhead
 from TimeControl import TimeControl
+from Test.Utils.UiTestSession import UiTestSession
 
 
 class Playlist(Gtk.Window):
+    open_playlist = None
+
+    @staticmethod
+    def open():
+        if Playlist.open_playlist is None:
+            Playlist.open_playlist = Playlist()
+
+        playlist = Playlist.open_playlist
+        playlist.present()
+        return playlist
+
+    @staticmethod
+    def close():
+        if Playlist.open_playlist is None:
+            return
+
+        Playlist.open_playlist.destroy()
 
     def __init__(self):
         super().__init__(title="Playlist")
@@ -46,20 +64,28 @@ class Playlist(Gtk.Window):
         position_playhead(TimeControl.get_time())
 
         self.show_all()
+        self.connect("destroy", self.on_destroy)
+
+    def on_destroy(self, e):
+        Playlist.open_playlist = None
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_PRIMARY:
             self.paste_clip(area, button)
 
     def paste_clip(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
-        # Get snapped x,y position
-        x = (int(button.x) // self.sub_beat_width) * self.sub_beat_width
-        y = (int(button.y) // self.track_height) * self.track_height
+        # Get beat/track position
+        track = int(button.y) // self.track_height
+        beat = int(button.x) // self.beat_width
+        print(track, beat)
+        self.create_clip(track, beat, 1)
 
-        clip = PlaylistClip(1)
+    def create_clip(self, track: int, beat: float, number: int):
+        clip = PlaylistClip(number)
         clip.set_size_request(self.bar_width, self.track_height)
-        self.clips_area.put(clip, x, y)
+        self.clips_area.put(clip, beat * self.beat_width, track * self.track_height)
         self.clips_area.show_all()
+        return clip
 
     @property
     def beat_width(self):
@@ -80,3 +106,6 @@ class Playlist(Gtk.Window):
     def draw_background(self, area: Gtk.DrawingArea, context: cairo.Context):
         draw_background_grid(area, context, self.track_height, self.sub_beat_width,
                              is_dark_row=lambda i: i % 2 == 0)
+
+
+UiTestSession.add_close_method(Playlist.close)

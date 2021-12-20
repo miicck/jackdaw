@@ -1,6 +1,6 @@
 from Gi import Gtk
 import cairo
-from Colors import Colors
+from UI.Colors import Colors
 from typing import Callable
 
 

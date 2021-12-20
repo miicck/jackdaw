@@ -1,25 +1,55 @@
 import TimeControl
 from Gi import Gtk, Gdk
 import cairo
-from MidiNote import MidiNote
-from Playhead import Playhead
+from UI.MidiNote import MidiNote
+from UI.Playhead import Playhead
 from TimeControl import TimeControl
-from Drawing import draw_background_grid
+from UI.Drawing import draw_background_grid
+from Test.Utils.UiTestSession import UiTestSession
+import MusicTheory
 
 
 class MidiEditor(Gtk.Window):
+    # The currently-open Midi editors
+    open_editors = dict()
+    MAX_OCTAVE = 8
+
+    class NoteOutOfRangeException(Exception):
+        pass
+
+    # Open a midi editor for a given clip
+    @staticmethod
+    def open(clip_number: int):
+        if clip_number in MidiEditor.open_editors:
+            editor = MidiEditor.open_editors[clip_number]
+        else:
+            editor = MidiEditor(clip_number)
+            MidiEditor.open_editors[clip_number] = editor
+
+        assert editor.clip_number == clip_number
+        editor.present()
+        return editor
+
+    @staticmethod
+    def close_all():
+        for clip in list(MidiEditor.open_editors):
+            MidiEditor.open_editors[clip].destroy()
 
     def __init__(self, clip_number: int):
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 
+        self.clip_number = clip_number
         self.set_default_size(800, 800)
         self.key_height = 20  # The height in px of a keyboard key
 
         # Set up the keys to display
         self.keys = []
-        for octave in range(8):
-            for note in ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]:
-                self.keys.append(f"{note}{octave}")
+        self.key_indicies = {}
+        for octave in range(MidiEditor.MAX_OCTAVE + 1):
+            for note in MusicTheory.NOTES:
+                name = f"{note}{octave}"
+                self.key_indicies[name] = len(self.keys)
+                self.keys.append(name)
 
         # Setup widget structure
         scroll_area = Gtk.ScrolledWindow()
@@ -66,14 +96,15 @@ class MidiEditor(Gtk.Window):
         position_playhead(TimeControl.get_time())
 
         self.show_all()
+        self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self.clip_number))
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
         if button.button == Gdk.BUTTON_PRIMARY:
-            self.add_note(area, button)
+            self.paste_note(area, button)
             return
 
-    def add_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
+    def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         height = area.get_allocated_height()
 
         # Work out which note was clicked
@@ -81,14 +112,29 @@ class MidiEditor(Gtk.Window):
         if key_index < 0 or key_index >= len(self.keys):
             return  # Invalid key
 
-        # Get snapped x,y position
-        y = height - (key_index + 1) * self.key_height
-        x = (int(button.x) // self.sub_beat_width) * self.sub_beat_width
+        beat = int(button.x) // self.sub_beat_width
+        beat /= 4.0
 
+        self.add_note(self.keys[key_index], beat)
+
+    def add_note(self, note: str, beat: float):
+
+        note = note.strip().upper()
+        if note not in self.key_indicies:
+            raise MidiEditor.NoteOutOfRangeException()
+
+        # Get the y position of the given note
+        height = self.notes_area.get_allocated_height()
+        index = self.key_indicies[note]
+        y = height - (index + 1) * self.key_height
+
+        # Create the note at the given beat
         note = MidiNote()
         note.set_size_request(self.beat_width - 2, self.key_height - 2)
-        self.notes_area.put(note, x + 1, y + 1)
+        self.notes_area.put(note, self.beat_width * beat + 1, y)
         self.notes_area.show_all()
+
+        return note
 
     @property
     def keyboard_depth(self):
@@ -163,3 +209,6 @@ class MidiEditor(Gtk.Window):
 
         draw_background_grid(area, context, self.key_height,
                              self.sub_beat_width, is_dark_row)
+
+
+UiTestSession.add_close_method(MidiEditor.close_all)
