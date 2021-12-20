@@ -77,7 +77,6 @@ class Playlist(Gtk.Window):
         # Get beat/track position
         track = int(button.y) // self.track_height
         beat = int(button.x) // self.beat_width
-        print(track, beat)
         self.create_clip(track, beat, 1)
 
     def create_clip(self, track: int, beat: float, number: int):

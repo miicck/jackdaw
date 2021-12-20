@@ -35,6 +35,11 @@ class MidiEditor(Gtk.Window):
         for clip in list(MidiEditor.open_editors):
             MidiEditor.open_editors[clip].destroy()
 
+    @staticmethod
+    def close(clip_number: int):
+        if clip_number in MidiEditor.open_editors:
+            MidiEditor.open_editors[clip_number].destroy()
+
     def __init__(self, clip_number: int):
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 

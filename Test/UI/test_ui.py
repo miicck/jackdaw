@@ -16,6 +16,26 @@ def test_open_midi_editor():
         assert MidiEditor.open(1) is not None
 
 
+def test_open_close_midi_editor():
+    with UiTestSession():
+        for i in range(10):
+            assert MidiEditor.open(i) is not None
+            MidiEditor.close(i)
+
+
+def test_open_many_midi_editors():
+    with UiTestSession(main_loop_ms=500):
+        for i in range(10):
+            assert MidiEditor.open(i) is not None
+
+
+def test_create_playlist_clips():
+    with UiTestSession():
+        pl = Playlist()
+        for i in range(100):
+            pl.create_clip(i, i, i)
+
+
 def test_create_midi_clip():
     with UiTestSession(main_loop_ms=500):
         pl = Playlist.open()
