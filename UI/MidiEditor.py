@@ -162,8 +162,8 @@ class MidiEditor(Gtk.Window):
             self.save_to_file()
 
         note = MidiNote(note, beat, on_note_destroy)
-        note.set_size_request(self.beat_width - 2, self.key_height - 2)
-        self.notes_area.put(note, self.beat_width * beat + 1, y)
+        note.set_size_request(self.beat_width, self.key_height)
+        self.notes_area.put(note, self.beat_width * beat, y)
         self.notes_area.show_all()
 
         if autosave:

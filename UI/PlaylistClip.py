@@ -43,7 +43,7 @@ class PlaylistClip(Gtk.DrawingArea):
         height = area.get_allocated_height()
 
         context.set_source_rgba(*Colors.playlist_clip)
-        context.rectangle(0, 0, width, height)
+        context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
 
         font_size = height // 5

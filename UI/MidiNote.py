@@ -34,5 +34,5 @@ class MidiNote(Gtk.DrawingArea):
         height = area.get_allocated_height()
 
         context.set_source_rgba(1.0, 1.0, 1.0, 0.5)
-        context.rectangle(0, 0, width, height)
+        context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
