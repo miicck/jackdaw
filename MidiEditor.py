@@ -62,7 +62,8 @@ class MidiEditor(Gtk.Window):
 
         playhead.set_position_callback(position_playhead)
         playhead.set_size_request(4, self.total_height)
-        self.notes_area.put(playhead, 128, 0)
+        self.notes_area.add(playhead)
+        position_playhead(TimeControl.get_time())
 
         self.show_all()
 

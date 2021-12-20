@@ -1,6 +1,7 @@
 from Gi import Gtk, Gdk
 import cairo
 from MidiEditor import MidiEditor
+from Colors import Colors
 
 
 class PlaylistClip(Gtk.DrawingArea):
@@ -28,11 +29,12 @@ class PlaylistClip(Gtk.DrawingArea):
         width = area.get_allocated_width()
         height = area.get_allocated_height()
 
-        context.set_source_rgba(1.0, 1.0, 1.0, 0.5)
+        context.set_source_rgba(*Colors.playlist_clip)
         context.rectangle(0, 0, width, height)
         context.fill()
 
         font_size = height // 5
         context.set_font_size(font_size)
-        context.move_to(0, font_size)
-        context.show_text(f"Clip {self.number}")
+        context.set_source_rgb(0.0, 0.0, 0.0)
+        context.move_to(1, font_size)
+        context.show_text(f"{self.number}")

@@ -26,10 +26,15 @@ class TimeControl:
 
     @staticmethod
     def update(self):
-        if TimeControl._paused:
-            return True
 
-        TimeControl._time += 16.0 / 1000.0
+        # Advance time if not paused
+        if not TimeControl._paused:
+            TimeControl._time += 16.0 / 1000.0
+
+        from Playhead import Playhead
+        for p in Playhead.playheads:
+            p.invoke_position_callback()
+
         return True
 
     @staticmethod

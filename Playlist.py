@@ -2,6 +2,8 @@ from Gi import Gtk, Gdk
 import cairo
 from Drawing import draw_background_grid
 from PlaylistClip import PlaylistClip
+from Playhead import Playhead
+from TimeControl import TimeControl
 
 
 class Playlist(Gtk.Window):
@@ -30,6 +32,18 @@ class Playlist(Gtk.Window):
         # Add click event
         background.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         background.connect("button-press-event", self.on_click)
+
+        playhead = Playhead()
+
+        def position_playhead(time):
+            x = TimeControl.time_to_beats(time) * self.beat_width
+            self.clips_area.move(playhead, x, 0)
+            self.clips_area.show_all()
+
+        playhead.set_position_callback(position_playhead)
+        playhead.set_size_request(4, self.clip_area_height)
+        self.clips_area.add(playhead)
+        position_playhead(TimeControl.get_time())
 
         self.show_all()
 
