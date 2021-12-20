@@ -3,9 +3,10 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 import cairo
+from MidiEditor import MidiEditor
 
 
-class MidiNote(Gtk.DrawingArea):
+class PlaylistClip(Gtk.DrawingArea):
 
     def __init__(self):
         super().__init__()
@@ -17,6 +18,10 @@ class MidiNote(Gtk.DrawingArea):
         if button.button == Gdk.BUTTON_SECONDARY:
             # Destroy note on right click
             self.destroy()
+            return
+
+        if button.button == Gdk.BUTTON_PRIMARY:
+            MidiEditor(1)
             return
 
     def draw_note(self, area: Gtk.DrawingArea, context: cairo.Context):

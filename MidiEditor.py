@@ -8,12 +8,13 @@ import cairo
 from MidiNote import MidiNote
 from Playhead import Playhead
 from TimeControl import TimeControl
+from Drawing import draw_background_grid
 
 
 class MidiEditor(Gtk.Window):
 
-    def __init__(self, track_number):
-        super().__init__(title=f"Midi Editor (track {track_number})")
+    def __init__(self, clip_number: int):
+        super().__init__(title=f"Midi Editor (clip {clip_number})")
 
         self.set_default_size(800, 800)
         self.key_height = 20  # The height in px of a keyboard key
@@ -85,7 +86,7 @@ class MidiEditor(Gtk.Window):
 
         # Get snapped x,y position
         y = height - (key_index + 1) * self.key_height
-        x = (int(button.x + self.sub_beat_width // 2) // self.sub_beat_width) * self.sub_beat_width
+        x = (int(button.x) // self.sub_beat_width) * self.sub_beat_width
 
         note = MidiNote()
         note.set_size_request(self.beat_width - 2, self.key_height - 2)
@@ -157,54 +158,11 @@ class MidiEditor(Gtk.Window):
         context.fill()
 
     def draw_background(self, area: Gtk.DrawingArea, context: cairo.Context):
-        height = area.get_allocated_height()
-        width = area.get_allocated_width()
 
-        # Colors
-        background = 0.3
-        background_black_key = 0.28
-        key_sep = 0.25
-        bar_mark = 0.0
-        beat_mark = 0.25
-        sub_beat_mark = 0.27
+        def is_dark_row(i):
+            if i < 0 or i >= len(self.keys):
+                return True
+            return "#" in self.keys[-i - 1]
 
-        # Fill background
-        context.set_source_rgb(background, background, background)
-        context.rectangle(0, 0, width, height)
-        context.fill()
-
-        # Fill black key background
-        context.set_source_rgb(*[background_black_key] * 3)
-        for i, k in enumerate(self.keys):
-            if "#" in k:
-                y = height - (i + 1) * self.key_height
-                context.rectangle(0, y, width, self.key_height)
-        context.fill()
-
-        # Draw sub-beat markers
-        context.set_source_rgb(sub_beat_mark, sub_beat_mark, sub_beat_mark)
-        for i in range(width // self.sub_beat_width):
-            context.move_to(i * self.sub_beat_width, 0)
-            context.line_to(i * self.sub_beat_width, height)
-        context.stroke()
-
-        # Draw key separators
-        context.set_source_rgb(key_sep, key_sep, key_sep)
-        for i in range(height // self.key_height):
-            context.move_to(0, i * self.key_height)
-            context.line_to(width, i * self.key_height)
-        context.stroke()
-
-        # Draw beat markers
-        context.set_source_rgb(beat_mark, beat_mark, beat_mark)
-        for i in range(width // self.beat_width):
-            context.move_to(i * self.beat_width, 0)
-            context.line_to(i * self.beat_width, height)
-        context.stroke()
-
-        # Draw bar markers
-        context.set_source_rgb(bar_mark, bar_mark, bar_mark)
-        for i in range(width // self.bar_width):
-            context.move_to(i * self.bar_width, 0)
-            context.line_to(i * self.bar_width, height)
-        context.stroke()
+        draw_background_grid(area, context, self.key_height,
+                             self.sub_beat_width, is_dark_row)
