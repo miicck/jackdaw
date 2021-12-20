@@ -1,9 +1,13 @@
 import gi
 
+import TimeControl
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 import cairo
 from MidiNote import MidiNote
+from Playhead import Playhead
+from TimeControl import TimeControl
 
 
 class MidiEditor(Gtk.Window):
@@ -51,6 +55,17 @@ class MidiEditor(Gtk.Window):
         # Add click event
         notes_background.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         notes_background.connect("button-press-event", self.on_click)
+
+        playhead = Playhead()
+
+        def position_playhead(time):
+            x = TimeControl.time_to_beats(time) * self.beat_width
+            self.notes_area.move(playhead, x, 0)
+            self.notes_area.show_all()
+
+        playhead.set_position_callback(position_playhead)
+        playhead.set_size_request(4, self.total_height)
+        self.notes_area.put(playhead, 128, 0)
 
         self.show_all()
 

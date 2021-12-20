@@ -1,9 +1,10 @@
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 
 from Playlist import Playlist
+from TimeControl import TimeControl
 
 
 class ControlPanel(Gtk.Window):
@@ -19,9 +20,22 @@ class ControlPanel(Gtk.Window):
         playlist_button.connect("clicked", self.show_playlist)
         buttons.add(playlist_button)
 
+        play_button = Gtk.Button(label="Play")
+        play_button.connect("clicked", lambda e: TimeControl.play())
+        buttons.add(play_button)
+
+        pause_button = Gtk.Button(label="Pause")
+        pause_button.connect("clicked", lambda e: TimeControl.pause())
+        buttons.add(pause_button)
+
+        stop_button = Gtk.Button(label="Stop")
+        stop_button.connect("clicked", lambda e: TimeControl.stop())
+        buttons.add(stop_button)
+
         self.show_all()
 
     def main_loop(self):
+        Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, 16, TimeControl.update, None)
         Gtk.main()
 
     def show_playlist(self, e):
