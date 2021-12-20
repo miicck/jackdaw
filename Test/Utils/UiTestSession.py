@@ -1,6 +1,7 @@
 import time
 from Gi import Gtk, Gdk, GLib
 from TimeControl import TimeControl
+from Project import Filestructure as FS
 
 
 class UiTestSession:
@@ -27,6 +28,7 @@ class UiTestSession:
         start_main_loop()
         TimeControl.stop()
         time.sleep(self.pause_after_ms / 1000.0)
+        FS.delete_project_in_current_dir()
 
     close_methods = set()
 

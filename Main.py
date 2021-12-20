@@ -8,6 +8,10 @@ def start_main_loop():
     Gtk.main()
 
 
-if __name__ == "__main__":
+def open_project_in_current_dir():
     cp = ControlPanel()
     start_main_loop()
+
+
+if __name__ == "__main__":
+    open_project_in_current_dir()

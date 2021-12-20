@@ -7,6 +7,8 @@ from TimeControl import TimeControl
 from UI.Drawing import draw_background_grid
 from Test.Utils.UiTestSession import UiTestSession
 import MusicTheory
+from Project import Filestructure as FS
+import os
 
 
 class MidiEditor(Gtk.Window):
@@ -44,6 +46,7 @@ class MidiEditor(Gtk.Window):
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 
         self.clip_number = clip_number
+
         self.set_default_size(800, 800)
         self.key_height = 20  # The height in px of a keyboard key
 
@@ -103,11 +106,32 @@ class MidiEditor(Gtk.Window):
         self.show_all()
         self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self.clip_number))
 
+        # Load/save
+        self.filename = f"{FS.DATA_DIR}/midi/{clip_number}.jdm"
+        if os.path.isfile(self.filename):
+            # Midi file already exists, load it
+            self.load_from_file()
+        else:
+            # Ensure midi file exists
+            self.save_to_file()
+
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
         if button.button == Gdk.BUTTON_PRIMARY:
             self.paste_note(area, button)
             return
+
+    def load_from_file(self):
+        with open(self.filename, "r") as f:
+            for line in f:
+                self.add_note(*MidiNote.load_from_line(line))
+
+    def save_to_file(self):
+        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
+        with open(self.filename, "w") as f:
+            for c in self.notes_area.get_children():
+                if isinstance(c, MidiNote):
+                    f.write(c.save_to_line() + "\n")
 
     def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         height = area.get_allocated_height()
@@ -117,9 +141,8 @@ class MidiEditor(Gtk.Window):
         if key_index < 0 or key_index >= len(self.keys):
             return  # Invalid key
 
-        beat = int(button.x) // self.sub_beat_width
-        beat /= 4.0
-
+        # Snap to nearest sub-beat
+        beat = (int(button.x) // self.sub_beat_width) / 4.0
         self.add_note(self.keys[key_index], beat)
 
     def add_note(self, note: str, beat: float):
@@ -134,10 +157,16 @@ class MidiEditor(Gtk.Window):
         y = height - (index + 1) * self.key_height
 
         # Create the note at the given beat
-        note = MidiNote()
+        def on_note_destroy(note):
+            self.notes_area.remove(note)
+            self.save_to_file()
+
+        note = MidiNote(note, beat, on_note_destroy)
         note.set_size_request(self.beat_width - 2, self.key_height - 2)
         self.notes_area.put(note, self.beat_width * beat + 1, y)
         self.notes_area.show_all()
+
+        self.save_to_file()
 
         return note
 
