@@ -3,6 +3,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 import cairo
+from MidiNote import MidiNote
 
 
 class MidiEditor(Gtk.Window):
@@ -37,13 +38,44 @@ class MidiEditor(Gtk.Window):
         notes_scroll_area = Gtk.ScrolledWindow()
         left_right_box.pack_start(notes_scroll_area, True, True, 0)
 
+        self.notes_area = Gtk.Fixed()
+        self.notes_area.set_size_request(8192, self.total_height)
+        notes_scroll_area.add(self.notes_area)
+
         # The bit containing the notes
-        playlist_area = Gtk.DrawingArea()
-        playlist_area.set_size_request(8192, self.total_height)
-        playlist_area.connect("draw", self.draw_background)
-        notes_scroll_area.add(playlist_area)
+        notes_background = Gtk.DrawingArea()
+        notes_background.set_size_request(8192, self.total_height)
+        notes_background.connect("draw", self.draw_background)
+        self.notes_area.add(notes_background)
+
+        # Add click event
+        notes_background.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        notes_background.connect("button-press-event", self.on_click)
 
         self.show_all()
+
+    def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
+
+        if button.button == Gdk.BUTTON_PRIMARY:
+            self.add_note(area, button)
+            return
+
+    def add_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
+        height = area.get_allocated_height()
+
+        # Work out which note was clicked
+        key_index = int(height - button.y) // self.key_height
+        if key_index < 0 or key_index >= len(self.keys):
+            return  # Invalid key
+
+        # Get snapped x,y position
+        y = height - (key_index + 1) * self.key_height
+        x = (int(button.x + self.sub_beat_width // 2) // self.sub_beat_width) * self.sub_beat_width
+
+        note = MidiNote()
+        note.set_size_request(self.beat_width - 2, self.key_height - 2)
+        self.notes_area.put(note, x + 1, y + 1)
+        self.notes_area.show_all()
 
     @property
     def keyboard_depth(self):
