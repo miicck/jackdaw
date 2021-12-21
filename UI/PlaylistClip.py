@@ -19,13 +19,12 @@ class PlaylistClip(Gtk.DrawingArea):
         self.connect("draw", self.draw_clip)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect("button-press-event", self.on_click)
+        self.connect("destroy", self.on_destroy)
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
         if button.button == Gdk.BUTTON_SECONDARY:
             # Destroy note on right click
-            if self.destroy_callback is not None:
-                self.destroy_callback()
             self.destroy()
             return
 
@@ -33,6 +32,10 @@ class PlaylistClip(Gtk.DrawingArea):
             # Open midi editor on left click
             self.open_midi_editor()
             return
+
+    def on_destroy(self, e):
+        if self.destroy_callback is not None:
+            self.destroy_callback()
 
     def open_midi_editor(self):
         return MidiEditor.open(self.clip_number)

@@ -12,14 +12,17 @@ class MidiNote(Gtk.DrawingArea):
         self.connect("draw", self.draw_note)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect("button-press-event", self.on_click)
+        self.connect("destroy", self.on_destroy)
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_SECONDARY:
             # Destroy note on right click
-            if self.destroy_callback is not None:
-                self.destroy_callback(self)
             self.destroy()
             return
+
+    def on_destroy(self, e):
+        if self.destroy_callback is not None:
+            self.destroy_callback(self)
 
     def save_to_line(self) -> str:
         return f"{self.note} {self.beat}"
