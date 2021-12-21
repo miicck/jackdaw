@@ -85,8 +85,6 @@ class PlaylistClip(Gtk.DrawingArea):
         context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
 
-        self.draw_midi_preview(area, context)
-
         font_size = height // 5
         context.set_font_size(font_size)
         context.set_source_rgb(0.0, 0.0, 0.0)
@@ -94,6 +92,8 @@ class PlaylistClip(Gtk.DrawingArea):
         context.show_text(f"{self.clip_number}")
 
     def draw_midi_preview(self, area: Gtk.DrawingArea, context: cairo.Context):
+
+        raise NotImplementedError()
 
         filename = f"{FS.DATA_DIR}/midi/{self.clip_number}.jdm"
         if not os.path.isfile(filename):

@@ -2,6 +2,7 @@ import time
 
 from UI.Playlist import Playlist
 from UI.MidiEditor import MidiEditor
+from Project.MidiNote import MidiNote
 from Test.Utils.UiTestSession import UiTestSession
 import MusicTheory
 
@@ -48,15 +49,16 @@ def test_create_midi_clip():
         assert me is not None
 
         beat = 0
-        for octave in range(-4, 20):
+        for octave in range(0, MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
-                name = f"{note}{octave}"
-                beat += 0.25
 
+                me.clip.add_note(MidiNote(f"{note}{octave}", beat))
+
+                beat += 0.25
                 if beat > 8:
                     beat -= 8
 
-                try:
-                    me.add_note(name, beat)
-                except MidiEditor.NoteOutOfRangeException:
-                    assert octave < 0 or octave > MidiEditor.MAX_OCTAVE
+        try:
+            me.clip.add_note(MidiNote("C50", 0))
+        except MidiEditor.NoteOutOfRangeException as e:
+            assert True

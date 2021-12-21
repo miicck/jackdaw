@@ -13,9 +13,8 @@ class UiTestSession:
         Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, main_loop_ms, self.stop_session, None)
 
     def stop_session(self, e):
-        # Close all open things
-        for m in UiTestSession.close_methods:
-            m()
+        from Session import call_session_close_methods
+        call_session_close_methods()
 
         # Perform a main quit
         Gtk.main_quit()
@@ -32,9 +31,3 @@ class UiTestSession:
 
         if not self.save_project:
             FS.delete_project_in_current_dir()
-
-    close_methods = set()
-
-    @staticmethod
-    def add_close_method(method: callable):
-        UiTestSession.close_methods.add(method)

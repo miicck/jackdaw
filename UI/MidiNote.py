@@ -1,41 +1,38 @@
 from Gi import Gtk, Gdk
 import cairo
+from Project.MidiNote import MidiNote as MidiNoteData
+from typing import Callable
 
 
 class MidiNote(Gtk.DrawingArea):
 
-    def __init__(self, note: str, beat: float, destroy_callback: callable = None):
+    def __init__(self, note: MidiNoteData):
         super().__init__()
         self.note = note
-        self.beat = beat
-        self.destroy_callback = destroy_callback
+        self._delete_note_callbacks = []
+
+        # Connect draw event
         self.connect("draw", self.draw_note)
+
+        # Add button press events
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect("button-press-event", self.on_click)
-        self.connect("destroy", self.on_destroy)
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_SECONDARY:
-            # Destroy note on right click
+            # Delete note on right click
+            for c in self._delete_note_callbacks:
+                c(self)
             self.destroy()
             return
-
-    def on_destroy(self, e):
-        if self.destroy_callback is not None:
-            self.destroy_callback(self)
-
-    def save_to_line(self) -> str:
-        return f"{self.note} {self.beat}"
-
-    @staticmethod
-    def load_from_line(line: str) -> [str, float]:
-        line = line.split()
-        return line[0].upper(), float(line[1])
 
     def draw_note(self, area: Gtk.DrawingArea, context: cairo.Context):
         width = area.get_allocated_width()
         height = area.get_allocated_height()
-
         context.set_source_rgba(1.0, 1.0, 1.0, 0.5)
         context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
+
+    def add_delete_note_listener(
+            self, callback: Callable[['MidiNote'], None]):
+        self._delete_note_callbacks.append(callback)

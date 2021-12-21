@@ -1,6 +1,7 @@
 from Test.Utils.UiTestSession import UiTestSession
 from UI.Playlist import Playlist
 from UI.MidiEditor import MidiEditor
+from Project.MidiNote import MidiNote
 import MusicTheory
 
 
@@ -56,15 +57,14 @@ def test_save_midi_clip():
         beat = 0
         for octave in range(MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
-                name = f"{note}{octave}"
-                data = (name, beat % 16)
-                me.add_note(*data)
+                data = (f"{note}{octave}", beat % 16)
+                me.clip.add_note(MidiNote(*data))
                 saved.add(data)
                 beat += 1
 
     with UiTestSession():
         me = MidiEditor.open(1)
-        for note in me.notes:
+        for note in me.clip.notes:
             data = (note.note, note.beat)
             assert data in saved
             saved.remove(data)
@@ -72,27 +72,34 @@ def test_save_midi_clip():
     assert len(saved) == 0
 
 
-def test_save_midi_with_note_destroy():
+def test_save_midi_clip_with_delete():
     saved = set()
 
     with UiTestSession(save_project=True):
+
+        assert len(MidiEditor.open_editors) == 0
+
         me = MidiEditor.open(1)
+        assert len(me.clip.notes) == 0
+
         beat = 0
         for octave in range(MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
-                name = f"{note}{octave}"
-                data = (name, beat % 16)
-                beat += 1
+                data = (f"{note}{octave}", beat % 16)
 
-                added = me.add_note(*data)
-                if octave % 3 == 0:
-                    added.destroy()
+                note = MidiNote(*data)
+                me.clip.add_note(note)
+
+                if beat % 3 == 0:
+                    me.clip.remote_note(note)
                 else:
                     saved.add(data)
 
+                beat += 1
+
     with UiTestSession():
         me = MidiEditor.open(1)
-        for note in me.notes:
+        for note in me.clip.notes:
             data = (note.note, note.beat)
             assert data in saved
             saved.remove(data)

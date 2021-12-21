@@ -6,8 +6,8 @@ from UI.Drawing import draw_background_grid
 from UI.PlaylistClip import PlaylistClip
 from UI.Playhead import Playhead
 from TimeControl import TimeControl
-from Test.Utils.UiTestSession import UiTestSession
 from Project import Filestructure as FS
+from Session import session_close_method
 
 
 class Playlist(Gtk.Window):
@@ -24,6 +24,7 @@ class Playlist(Gtk.Window):
         return playlist
 
     @staticmethod
+    @session_close_method
     def close():
         if Playlist.open_playlist is None:
             return
@@ -142,6 +143,3 @@ class Playlist(Gtk.Window):
     def draw_background(self, area: Gtk.DrawingArea, context: cairo.Context):
         draw_background_grid(area, context, self.track_height, self.sub_beat_width,
                              is_dark_row=lambda i: i % 2 == 0)
-
-
-UiTestSession.add_close_method(Playlist.close)

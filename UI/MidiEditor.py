@@ -5,10 +5,11 @@ from UI.MidiNote import MidiNote
 from UI.Playhead import Playhead
 from TimeControl import TimeControl
 from UI.Drawing import draw_background_grid
-from Test.Utils.UiTestSession import UiTestSession
+from Session import session_close_method
 import MusicTheory
-from Project import Filestructure as FS
-import os
+from Project.MidiNote import MidiNote as MidiNoteData
+from Project.MidiClip import MidiClip as MidiClipData
+from Project import data
 
 
 class MidiEditor(Gtk.Window):
@@ -17,7 +18,8 @@ class MidiEditor(Gtk.Window):
     MAX_OCTAVE = 8
 
     class NoteOutOfRangeException(Exception):
-        pass
+        def __init__(self, message):
+            self.message = message
 
     # Open a midi editor for a given clip
     @staticmethod
@@ -28,19 +30,21 @@ class MidiEditor(Gtk.Window):
             editor = MidiEditor(clip_number)
             MidiEditor.open_editors[clip_number] = editor
 
-        assert editor.clip_number == clip_number
+        assert editor.clip.clip_number == clip_number
         editor.present()
         return editor
 
     @staticmethod
+    @session_close_method
     def close_all():
-        for clip in list(MidiEditor.open_editors):
-            MidiEditor.open_editors[clip].destroy()
+        for clip_number in list(MidiEditor.open_editors):
+            MidiEditor.close(clip_number)
 
     @staticmethod
     def close(clip_number: int):
         if clip_number in MidiEditor.open_editors:
             MidiEditor.open_editors[clip_number].destroy()
+            assert clip_number not in MidiEditor.open_editors
 
     @staticmethod
     def note_name_to_index(name: str):
@@ -55,10 +59,11 @@ class MidiEditor(Gtk.Window):
     def __init__(self, clip_number: int):
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 
-        self.clip_number = clip_number
+        self.clip = data.midi_clip(clip_number)
+        self.clip.add_change_listener(self.on_clip_change)
 
         self.set_default_size(800, 800)
-        self.key_height = 20  # The height in px of a keyboard key
+        self.key_height = 16  # The height in px of a keyboard key
 
         # Set up the keys to display
         self.keys = []
@@ -117,16 +122,10 @@ class MidiEditor(Gtk.Window):
         position_playhead(TimeControl.get_time())
 
         self.show_all()
-        self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self.clip_number))
+        self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self.clip.clip_number))
 
-        # Load/save
-        self.filename = f"{FS.DATA_DIR}/midi/{clip_number}.jdm"
-        if os.path.isfile(self.filename):
-            # Midi file already exists, load it
-            self.load_from_file()
-        else:
-            # Ensure midi file exists
-            self.save_to_file()
+        # Invoke clip change to load clip data
+        self.on_clip_change(self.clip)
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
@@ -134,22 +133,31 @@ class MidiEditor(Gtk.Window):
             self.paste_note(area, button)
             return
 
-    def load_from_file(self):
-        with open(self.filename, "r") as f:
-            for line in f:
-                self.add_note(*MidiNote.load_from_line(line), autosave=False)
+    def on_clip_change(self, clip: MidiClipData):
 
-    def save_to_file(self):
-        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
-        with open(self.filename, "w") as f:
-            for c in self.notes:
-                f.write(c.save_to_line() + "\n")
-
-    @property
-    def notes(self):
+        # Destroy all the old midi notes in the UI
         for c in self.notes_area.get_children():
             if isinstance(c, MidiNote):
-                yield c
+                c.destroy()
+
+        # Create all the new midi notes in the UI
+        for note in clip.notes:
+
+            if note.note not in self.key_indicies:
+                raise MidiEditor.NoteOutOfRangeException(f"Note: {note.note}")
+
+            # Get the y position of the given note
+            height = self.notes_area.get_allocated_height()
+            index = self.key_indicies[note.note]
+            y = height - (index + 1) * self.key_height
+
+            # Create the note UI
+            note_ui = MidiNote(note)
+            note_ui.set_size_request(self.beat_width, self.key_height)
+            self.notes_area.put(note_ui, self.beat_width * note.beat, y)
+            note_ui.add_delete_note_listener(lambda n: self.clip.remote_note(n.note))
+
+        self.notes_area.show_all()
 
     def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         height = area.get_allocated_height()
@@ -158,36 +166,12 @@ class MidiEditor(Gtk.Window):
         key_index = int(height - button.y) // self.key_height
         if key_index < 0 or key_index >= len(self.keys):
             return  # Invalid key
+        note = self.keys[key_index]
 
         # Snap to nearest sub-beat
         beat = (int(button.x) // self.sub_beat_width) / 4.0
-        self.add_note(self.keys[key_index], beat)
 
-    def add_note(self, note: str, beat: float, autosave=True):
-
-        note = note.strip().upper()
-        if note not in self.key_indicies:
-            raise MidiEditor.NoteOutOfRangeException(note)
-
-        # Get the y position of the given note
-        height = self.notes_area.get_allocated_height()
-        index = self.key_indicies[note]
-        y = height - (index + 1) * self.key_height
-
-        # Create the note at the given beat
-        def on_note_destroy(note):
-            self.notes_area.remove(note)
-            self.save_to_file()
-
-        note = MidiNote(note, beat, on_note_destroy)
-        note.set_size_request(self.beat_width, self.key_height)
-        self.notes_area.put(note, self.beat_width * beat, y)
-        self.notes_area.show_all()
-
-        if autosave:
-            self.save_to_file()
-
-        return note
+        self.clip.add_note(MidiNoteData(note, beat))
 
     @property
     def keyboard_depth(self):
@@ -262,6 +246,3 @@ class MidiEditor(Gtk.Window):
 
         draw_background_grid(area, context, self.key_height,
                              self.sub_beat_width, is_dark_row)
-
-
-UiTestSession.add_close_method(MidiEditor.close_all)
