@@ -28,10 +28,39 @@ class PlaylistClip(Gtk.DrawingArea):
             self.destroy()
             return
 
-        if button.button == Gdk.BUTTON_PRIMARY:
-            # Open midi editor on left click
-            self.open_midi_editor()
+        if button.button == Gdk.BUTTON_MIDDLE:
+            # Make clip unique on middle click
+            self.make_unique()
             return
+
+        if button.button == Gdk.BUTTON_PRIMARY:
+            # Open midi editor on double left click
+            if button.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
+                self.open_midi_editor()
+
+            from UI.Playlist import Playlist
+            Playlist.paste_clip_number = self.clip_number
+            return
+
+    def make_unique(self):
+        from UI.Playlist import Playlist
+        was_closed = Playlist.open_playlist is None
+
+        # Make unique by picking a new clip number
+        pl = Playlist.open()
+        old_clip_file = f"{FS.DATA_DIR}/midi/{self.clip_number}.jdm"
+        self.clip_number = max(c.clip_number for c in pl.clips) + 1
+
+        # Copy previous clip file if exists
+        if os.path.isfile(old_clip_file):
+            new_clip_file = f"{FS.DATA_DIR}/midi/{self.clip_number}.jdm"
+            os.system(f"cp {old_clip_file} {new_clip_file}")
+
+        # Save new clip number by saving playlist
+        pl.save_to_file()
+
+        if was_closed:
+            Playlist.close()
 
     def on_destroy(self, e):
         if self.destroy_callback is not None:
@@ -56,13 +85,13 @@ class PlaylistClip(Gtk.DrawingArea):
         context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
 
+        self.draw_midi_preview(area, context)
+
         font_size = height // 5
         context.set_font_size(font_size)
         context.set_source_rgb(0.0, 0.0, 0.0)
         context.move_to(1, font_size)
         context.show_text(f"{self.clip_number}")
-
-        self.draw_midi_preview(area, context)
 
     def draw_midi_preview(self, area: Gtk.DrawingArea, context: cairo.Context):
 
@@ -97,5 +126,7 @@ class PlaylistClip(Gtk.DrawingArea):
             frac = (index - min_index) / (max_index - min_index)
             y = int((1 - frac) * height)
             x = int(beat * width / 4)
-            context.rectangle(x + 1, y + 1, width // 4, height // (max_index - min_index))
+            context.rectangle(x + 1, y + 1,
+                              width // 4 - 1,
+                              height // (max_index - min_index))
         context.fill()

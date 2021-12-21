@@ -12,6 +12,7 @@ from Project import Filestructure as FS
 
 class Playlist(Gtk.Window):
     open_playlist = None
+    paste_clip_number = 1
 
     @staticmethod
     def open():
@@ -104,7 +105,7 @@ class Playlist(Gtk.Window):
         # Get beat/track position
         track = int(button.y) // self.track_height
         beat = int(button.x) // self.beat_width
-        self.create_clip(1, track, beat)
+        self.create_clip(Playlist.paste_clip_number, track, beat)
 
     def create_clip(self, number: int, track: int, beat: float, autosave=True):
 
