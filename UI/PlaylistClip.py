@@ -8,6 +8,7 @@ from UI.Colors import Colors
 from Data import Filestructure as FS
 from Data.PlaylistClipData import PlaylistClipData
 from typing import Callable
+from Data import data
 
 
 class PlaylistClip(Gtk.DrawingArea):
@@ -52,6 +53,8 @@ class PlaylistClip(Gtk.DrawingArea):
         context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
 
+        self.draw_midi_preview(area, context)
+
         font_size = height // 5
         context.set_font_size(font_size)
         context.set_source_rgb(0.0, 0.0, 0.0)
@@ -64,23 +67,14 @@ class PlaylistClip(Gtk.DrawingArea):
 
     def draw_midi_preview(self, area: Gtk.DrawingArea, context: cairo.Context):
 
-        raise NotImplementedError()
-
-        filename = f"{FS.DATA_DIR}/midi/{self.clip_number}.jdm"
-        if not os.path.isfile(filename):
-            return
-
         # Midi drawing area has a 1px borer
         width = area.get_allocated_width() - 2
         height = area.get_allocated_height() - 2
 
         # Read the notes from the file
         notes = []
-        with open(filename, "r") as f:
-            for line in f:
-                name, beat = MidiNote.load_from_line(line)
-                index = MidiEditor.note_name_to_index(name)
-                notes.append((index, beat))
+        for note in data.midi_clip(self.clip.clip_number).notes:
+            notes.append((MidiEditor.note_name_to_index(note.note), note.beat))
 
         # No notes to draw
         if len(notes) == 0:
