@@ -5,8 +5,8 @@ import cairo
 from UI.MidiEditor import MidiEditor
 from UI.MidiNote import MidiNote
 from UI.Colors import Colors
-from Project import Filestructure as FS
-from Project.PlaylistClipData import PlaylistClipData
+from Data import Filestructure as FS
+from Data.PlaylistClipData import PlaylistClipData
 from typing import Callable
 
 

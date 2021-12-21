@@ -1,7 +1,7 @@
 import time
 from Gi import Gtk, Gdk, GLib
 from TimeControl import TimeControl
-from Project import Filestructure as FS
+from Data import Filestructure as FS
 
 
 class UiTestSession:

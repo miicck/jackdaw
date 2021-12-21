@@ -7,9 +7,9 @@ from TimeControl import TimeControl
 from UI.Drawing import draw_background_grid
 from Session import session_close_method
 import MusicTheory
-from Project.MidiNote import MidiNote as MidiNoteData
-from Project.MidiClip import MidiClip as MidiClipData
-from Project import data
+from Data.MidiNoteData import MidiNoteData as MidiNoteData
+from Data.MidiClipData import MidiClipData as MidiClipData
+from Data import data
 
 
 class MidiEditor(Gtk.Window):
@@ -171,7 +171,7 @@ class MidiEditor(Gtk.Window):
         # Snap to nearest sub-beat
         beat = (int(button.x) // self.sub_beat_width) / 4.0
 
-        self.clip.add_note(MidiNoteData(note, beat))
+        self.clip.add(MidiNoteData(note, beat))
 
     @property
     def keyboard_depth(self):

@@ -1,8 +1,8 @@
 from Test.Utils.UiTestSession import UiTestSession
 from UI.Playlist import Playlist
 from UI.MidiEditor import MidiEditor
-from Project.MidiNote import MidiNote
-from Project.PlaylistClipData import PlaylistClipData
+from Data.MidiNoteData import MidiNoteData
+from Data.PlaylistClipData import PlaylistClipData
 import MusicTheory
 
 
@@ -61,7 +61,7 @@ def test_save_midi_clip():
         for octave in range(MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
                 data = (f"{note}{octave}", beat % 16)
-                me.clip.add(MidiNote(*data))
+                me.clip.add(MidiNoteData(*data))
                 saved.add(data)
                 beat += 1
 
@@ -90,7 +90,7 @@ def test_save_midi_clip_with_delete():
             for note in MusicTheory.NOTES:
                 data = (f"{note}{octave}", beat % 16)
 
-                note = MidiNote(*data)
+                note = MidiNoteData(*data)
                 me.clip.add(note)
 
                 if beat % 3 == 0:

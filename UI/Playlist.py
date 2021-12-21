@@ -5,9 +5,9 @@ from UI.PlaylistClip import PlaylistClip
 from UI.Playhead import Playhead
 from TimeControl import TimeControl
 from Session import session_close_method
-from Project.PlaylistData import PlaylistData
-from Project.PlaylistClipData import PlaylistClipData
-from Project import data
+from Data.PlaylistData import PlaylistData
+from Data.PlaylistClipData import PlaylistClipData
+from Data import data
 
 
 class Playlist(Gtk.Window):

@@ -1,11 +1,13 @@
-from Project.LineSerializable import LineSerializable
+from Data.LineSerializable import LineSerializable
 
 
-class MidiNote(LineSerializable):
+class MidiNoteData(LineSerializable):
 
     def __init__(self, note: str, beat: float):
         """
-        A MIDI note data object.
+        Data representing a single MIDI note.
+        :param note: The keyboard note e.g "C#5"
+        :param beat: The beat location of the note.
         """
         self.note = note
         self.beat = beat
@@ -19,7 +21,7 @@ class MidiNote(LineSerializable):
         return f"{self.note} {self.beat}"
 
     @classmethod
-    def load_from_line(cls, line: str) -> 'MidiNote':
+    def load_from_line(cls, line: str) -> 'MidiNoteData':
         """
         Creates a MIDI note from a save line.
         :param line: The line containing saved MIDI note data.
@@ -29,4 +31,4 @@ class MidiNote(LineSerializable):
         note = line[0]
         beat = float(line[1])
 
-        return MidiNote(note, beat)
+        return MidiNoteData(note, beat)

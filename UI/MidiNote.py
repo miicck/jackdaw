@@ -1,6 +1,6 @@
 from Gi import Gtk, Gdk
 import cairo
-from Project.MidiNote import MidiNote as MidiNoteData
+from Data.MidiNoteData import MidiNoteData as MidiNoteData
 from typing import Callable
 
 

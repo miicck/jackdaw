@@ -1,5 +1,5 @@
-from Project.MidiClip import MidiClip
-from Project.PlaylistData import PlaylistData
+from Data.MidiClipData import MidiClipData
+from Data.PlaylistData import PlaylistData
 
 
 class ProjectData:
@@ -7,8 +7,8 @@ class ProjectData:
     def __init__(self):
         pass
 
-    def midi_clip(self, clip_number: int) -> MidiClip:
-        return MidiClip.get(clip_number)
+    def midi_clip(self, clip_number: int) -> MidiClipData:
+        return MidiClipData.get(clip_number)
 
     @property
     def playlist(self):

@@ -1,11 +1,11 @@
-from Project import Filestructure as FS
-from Project.MidiNote import MidiNote
+from Data import Filestructure as FS
+from Data.MidiNoteData import MidiNoteData
 from Session import session_close_method
-from Project.LineSerializable import LineSerializableCollection
+from Data.LineSerializable import LineSerializableCollection
 from typing import List
 
 
-class MidiClip(LineSerializableCollection[MidiNote]):
+class MidiClipData(LineSerializableCollection[MidiNoteData]):
 
     def __init__(self, clip_number: int):
         """
@@ -17,7 +17,7 @@ class MidiClip(LineSerializableCollection[MidiNote]):
         self._clip_number = clip_number
 
         # Load the clip if it exists already
-        self.load(MidiNote.load_from_line)
+        self.load(MidiNoteData.load_from_line)
 
     @property
     def filename(self) -> str:
@@ -32,7 +32,7 @@ class MidiClip(LineSerializableCollection[MidiNote]):
         return self._clip_number
 
     @property
-    def notes(self) -> List[MidiNote]:
+    def notes(self) -> List[MidiNoteData]:
         return self.data
 
     ################
@@ -42,21 +42,21 @@ class MidiClip(LineSerializableCollection[MidiNote]):
     _loaded_clips = dict()
 
     @staticmethod
-    def get(clip_number: int) -> 'MidiClip':
+    def get(clip_number: int) -> 'MidiClipData':
         """
         :param clip_number: The MIDI clip number.
         :return: The MIDI data associated with the given clip number.
-        :rtype: MidiClip
+        :rtype: MidiClipData
         """
         # Load existing clip
-        if clip_number in MidiClip._loaded_clips:
-            clip = MidiClip._loaded_clips[clip_number]
+        if clip_number in MidiClipData._loaded_clips:
+            clip = MidiClipData._loaded_clips[clip_number]
             assert clip.clip_number == clip_number
             return clip
 
         # Create new clip
-        new_clip = MidiClip(clip_number)
-        MidiClip._loaded_clips[clip_number] = new_clip
+        new_clip = MidiClipData(clip_number)
+        MidiClipData._loaded_clips[clip_number] = new_clip
         return new_clip
 
     @staticmethod
@@ -66,4 +66,4 @@ class MidiClip(LineSerializableCollection[MidiNote]):
         Call to unload all loaded clips.
         :return:
         """
-        MidiClip._loaded_clips = dict()
+        MidiClipData._loaded_clips = dict()

@@ -1,7 +1,7 @@
 from Session import session_close_method
-from Project import Filestructure as FS
-from Project.LineSerializable import LineSerializableCollection
-from Project.PlaylistClipData import PlaylistClipData
+from Data import Filestructure as FS
+from Data.LineSerializable import LineSerializableCollection
+from Data.PlaylistClipData import PlaylistClipData
 
 
 class PlaylistData(LineSerializableCollection[PlaylistClipData]):
