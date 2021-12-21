@@ -92,10 +92,8 @@ class Playlist(Gtk.Window):
     def on_playlist_data_change(self, playlist_data: PlaylistData):
 
         # Destroy old clips
-        for c in self.clips_area.get_children():
-            if isinstance(c, PlaylistClip):
-                self.clips_area.remove(c)
-                c.destroy()
+        for c in self.ui_clips:
+            c.destroy()
 
         # Create new clips
         for clip_data in playlist_data.clips:
@@ -105,6 +103,12 @@ class Playlist(Gtk.Window):
                                 clip_data.track * self.track_height)
             self.clips_area.show_all()
             clip.add_delete_clip_listener(lambda c: playlist_data.remove(c.clip))
+
+    @property
+    def ui_clips(self):
+        for c in self.clips_area.get_children():
+            if isinstance(c, PlaylistClip):
+                yield c
 
     @property
     def beat_width(self):

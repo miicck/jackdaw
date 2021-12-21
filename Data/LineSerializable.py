@@ -51,6 +51,10 @@ class LineSerializableCollection(ABC, Generic[T]):
             for n in self._data:
                 f.write(n.save_to_line().strip() + "\n")
 
+        # No data => get rid of data file
+        if len(self._data) == 0:
+            os.remove(self.filename)
+
     def load(self, loader: Callable[[str], T]) -> None:
         """
         Load my data from a file, by creating

@@ -1,12 +1,9 @@
-import os.path
-
 from Gi import Gtk, Gdk
 import cairo
 from UI.MidiEditor import MidiEditor
-from UI.MidiNote import MidiNote
 from UI.Colors import Colors
-from Data import Filestructure as FS
 from Data.PlaylistClipData import PlaylistClipData
+from Data.MidiClipData import MidiClipData
 from typing import Callable
 from Data import data
 
@@ -29,13 +26,6 @@ class PlaylistClip(Gtk.DrawingArea):
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
-        if button.button == Gdk.BUTTON_SECONDARY:
-            # Destroy note on right click
-            for c in self._delete_clip_callbacks:
-                c(self)
-            self.destroy()
-            return
-
         if button.button == Gdk.BUTTON_PRIMARY:
             # Open midi editor on double left click
             if button.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
@@ -44,6 +34,47 @@ class PlaylistClip(Gtk.DrawingArea):
             from UI.Playlist import Playlist
             Playlist.paste_clip_number = self.clip.clip_number
             return
+
+        if button.button == Gdk.BUTTON_SECONDARY:
+            # Delete note on right click
+            self.delete()
+            return
+
+        if button.button == Gdk.BUTTON_MIDDLE:
+            # Make unique on middle click
+            self.make_unique()
+            return
+
+    def make_unique(self):
+
+        # Get a unique clip number
+        numbers = set(MidiClipData.clips_on_disk())
+        if len(numbers) > 0:
+            unique_number = max(numbers) + 1
+            for i in range(1, unique_number + 1):
+                if i not in numbers:
+                    unique_number = i
+                    break
+        else:
+            unique_number = 1
+
+        # Copy MIDI data from this clip
+        midi = MidiClipData.get(unique_number)
+        old_midi = MidiClipData.get(self.clip.clip_number)
+        for note in old_midi.notes:
+            midi.add(note.copy())
+
+        # Create the new clip
+        new_data = PlaylistClipData(unique_number, self.clip.track, self.clip.beat)
+        data.playlist.add(new_data)
+
+        # Delete me
+        self.delete()
+
+    def delete(self):
+        for c in self._delete_clip_callbacks:
+            c(self)
+        self.destroy()
 
     def draw_clip(self, area: Gtk.DrawingArea, context: cairo.Context):
         width = area.get_allocated_width()
@@ -80,10 +111,9 @@ class PlaylistClip(Gtk.DrawingArea):
         if len(notes) == 0:
             return
 
-        # Sort notes by index/get effective index range
-        notes.sort()
-        min_index = notes[0][0] - 1
-        max_index = notes[-1][0] + 1
+        # Get effective index range
+        min_index = min(n[0] for n in notes) - 1
+        max_index = max(n[0] for n in notes) + 1
 
         context.set_source_rgb(*Colors.playlist_midi_note)
         for index, beat in notes:

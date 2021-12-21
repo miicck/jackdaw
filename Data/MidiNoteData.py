@@ -12,6 +12,13 @@ class MidiNoteData(LineSerializable):
         self.note = note
         self.beat = beat
 
+    def copy(self) -> 'MidiNoteData':
+        """
+        Create a copy of this MIDI note data.
+        :return: The MIDI note data copy.
+        """
+        return MidiNoteData(self.note, self.beat)
+
     def save_to_line(self) -> str:
         """
         Save the data for this midi note

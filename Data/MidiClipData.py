@@ -1,8 +1,10 @@
+import os
+
 from Data import Filestructure as FS
 from Data.MidiNoteData import MidiNoteData
 from Session import session_close_method
 from Data.LineSerializable import LineSerializableCollection
-from typing import List
+from typing import List, Iterable
 
 
 class MidiClipData(LineSerializableCollection[MidiNoteData]):
@@ -21,7 +23,7 @@ class MidiClipData(LineSerializableCollection[MidiNoteData]):
 
     @property
     def filename(self) -> str:
-        return f"{FS.DATA_DIR}/midi/{self._clip_number}.jdm"
+        return f"{MidiClipData.midi_directory()}/{self._clip_number}.jdm"
 
     ##############
     # PROPERTIES #
@@ -61,9 +63,21 @@ class MidiClipData(LineSerializableCollection[MidiNoteData]):
 
     @staticmethod
     @session_close_method
-    def unload_all_clips():
+    def unload_all_clips() -> None:
         """
         Call to unload all loaded clips.
-        :return:
         """
         MidiClipData._loaded_clips = dict()
+
+    @staticmethod
+    def midi_directory():
+        return f"{FS.DATA_DIR}/midi"
+
+    @staticmethod
+    def clips_on_disk() -> Iterable[int]:
+        """
+        Get all the clip numbers currently defined on disk.
+        """
+        if os.path.isdir(MidiClipData.midi_directory()):
+            for f in os.listdir(MidiClipData.midi_directory()):
+                yield int(f.replace(".jdm", ""))
