@@ -2,6 +2,7 @@ from Test.Utils.UiTestSession import UiTestSession
 from UI.Playlist import Playlist
 from UI.MidiEditor import MidiEditor
 from Project.MidiNote import MidiNote
+from Project.PlaylistClipData import PlaylistClipData
 import MusicTheory
 
 
@@ -12,12 +13,12 @@ def test_save_playlist():
         pl = Playlist.open()
         for i in range(25):
             data = (i, i, i % 16)
-            pl.create_clip(*data)
+            pl.data.add(PlaylistClipData(*data))
             saved.add(data)
 
     with UiTestSession():
         pl = Playlist.open()
-        for c in pl.clips:
+        for c in pl.data.clips:
             data = (c.clip_number, c.track, c.beat)
             assert data in saved
             saved.remove(data)
@@ -32,16 +33,18 @@ def test_save_playlist_with_clip_destroy():
         pl = Playlist.open()
         for i in range(25):
             data = (i, i, i % 16)
-            clip = pl.create_clip(*data)
+
+            clip_data = PlaylistClipData(*data)
+            pl.data.add(clip_data)
 
             if i % 3 == 0:
-                clip.destroy()
+                pl.data.remove(clip_data)
             else:
                 saved.add(data)
 
     with UiTestSession():
         pl = Playlist.open()
-        for c in pl.clips:
+        for c in pl.data.clips:
             data = (c.clip_number, c.track, c.beat)
             assert data in saved
             saved.remove(data)

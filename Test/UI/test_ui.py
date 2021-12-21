@@ -5,6 +5,7 @@ from UI.MidiEditor import MidiEditor
 from Project.MidiNote import MidiNote
 from Test.Utils.UiTestSession import UiTestSession
 import MusicTheory
+from Project.PlaylistClipData import PlaylistClipData
 
 
 def test_open_playlist():
@@ -34,7 +35,7 @@ def test_create_playlist_clips():
     with UiTestSession():
         pl = Playlist()
         for i in range(100):
-            pl.create_clip(i, i, i)
+            pl.data.add(PlaylistClipData(i, i, i % 16))
 
 
 def test_create_midi_clip():
@@ -42,10 +43,8 @@ def test_create_midi_clip():
         pl = Playlist.open()
         assert pl is not None
 
-        clip = pl.create_clip(0, 0, 1)
-        assert clip is not None
-
-        me = clip.open_midi_editor()
+        pl.data.add(PlaylistClipData(1, 0, 0))
+        me = MidiEditor.open(1)
         assert me is not None
 
         beat = 0

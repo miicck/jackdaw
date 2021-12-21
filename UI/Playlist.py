@@ -1,13 +1,13 @@
-import os.path
-
 from Gi import Gtk, Gdk
 import cairo
 from UI.Drawing import draw_background_grid
 from UI.PlaylistClip import PlaylistClip
 from UI.Playhead import Playhead
 from TimeControl import TimeControl
-from Project import Filestructure as FS
 from Session import session_close_method
+from Project.PlaylistData import PlaylistData
+from Project.PlaylistClipData import PlaylistClipData
+from Project import data
 
 
 class Playlist(Gtk.Window):
@@ -34,6 +34,8 @@ class Playlist(Gtk.Window):
     def __init__(self):
         super().__init__(title="Playlist")
         self.set_default_size(800, 800)
+        self.data = data.playlist
+        self.data.add_change_listener(self.on_playlist_data_change)
 
         self.track_height = 64
         self.sub_beat_width = 8
@@ -71,29 +73,8 @@ class Playlist(Gtk.Window):
         self.show_all()
         self.connect("destroy", self.on_destroy)
 
-        # Saving/loading
-        self.filename = f"{FS.DATA_DIR}/playlist.jdp"
-        if os.path.isfile(self.filename):
-            self.load_from_file()
-        else:
-            self.save_to_file()
-
-    def load_from_file(self):
-        with open(self.filename, "r") as f:
-            for line in f:
-                self.create_clip(*PlaylistClip.load_from_line(line), autosave=False)
-
-    def save_to_file(self):
-        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
-        with open(self.filename, "w") as f:
-            for c in self.clips:
-                f.write(c.save_to_line() + "\n")
-
-    @property
-    def clips(self):
-        for c in self.clips_area.get_children():
-            if isinstance(c, PlaylistClip):
-                yield c
+        # Load initial playlist data
+        self.on_playlist_data_change(self.data)
 
     def on_destroy(self, e):
         Playlist.open_playlist = None
@@ -106,23 +87,24 @@ class Playlist(Gtk.Window):
         # Get beat/track position
         track = int(button.y) // self.track_height
         beat = int(button.x) // self.beat_width
-        self.create_clip(Playlist.paste_clip_number, track, beat)
+        self.data.add(PlaylistClipData(Playlist.paste_clip_number, track, beat))
 
-    def create_clip(self, number: int, track: int, beat: float, autosave=True):
+    def on_playlist_data_change(self, playlist_data: PlaylistData):
 
-        def on_remove_clip(clip):
-            self.clips_area.remove(clip)
-            self.save_to_file()
+        # Destroy old clips
+        for c in self.clips_area.get_children():
+            if isinstance(c, PlaylistClip):
+                self.clips_area.remove(c)
+                c.destroy()
 
-        clip = PlaylistClip(number, track, beat, lambda: on_remove_clip(clip))
-        clip.set_size_request(self.bar_width, self.track_height)
-        self.clips_area.put(clip, beat * self.beat_width, track * self.track_height)
-        self.clips_area.show_all()
-
-        if autosave:
-            self.save_to_file()
-
-        return clip
+        # Create new clips
+        for clip_data in playlist_data.clips:
+            clip = PlaylistClip(clip_data)
+            clip.set_size_request(self.bar_width, self.track_height)
+            self.clips_area.put(clip, clip_data.beat * self.beat_width,
+                                clip_data.track * self.track_height)
+            self.clips_area.show_all()
+            clip.add_delete_clip_listener(lambda c: playlist_data.remove(c.clip))
 
     @property
     def beat_width(self):

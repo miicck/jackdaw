@@ -10,8 +10,13 @@ class PlaylistData(LineSerializableCollection[PlaylistClipData]):
         super().__init__()
         self.load(PlaylistClipData.load_from_line)
 
+    @property
     def filename(self) -> str:
         return f"{FS.DATA_DIR}/playlist.jdp"
+
+    @property
+    def clips(self):
+        return self.data
 
     ################
     # STATIC STUFF #

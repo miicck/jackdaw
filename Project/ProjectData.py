@@ -1,4 +1,5 @@
 from Project.MidiClip import MidiClip
+from Project.PlaylistData import PlaylistData
 
 
 class ProjectData:
@@ -8,6 +9,10 @@ class ProjectData:
 
     def midi_clip(self, clip_number: int) -> MidiClip:
         return MidiClip.get(clip_number)
+
+    @property
+    def playlist(self):
+        return PlaylistData.get()
 
     ################
     # STATIC STUFF #
