@@ -20,6 +20,13 @@ class TimeControl:
         TimeControl._paused = not TimeControl._paused
 
     @staticmethod
+    def toggle_play_stop():
+        if TimeControl._paused:
+            TimeControl.play()
+        else:
+            TimeControl.stop()
+
+    @staticmethod
     def stop():
         TimeControl._paused = True
         TimeControl._time = 0.0

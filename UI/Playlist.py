@@ -30,6 +30,7 @@ class Playlist(Gtk.Window):
         self.setup_playhead()
 
         self.connect("destroy", self.on_destroy)  # Connect destroy event
+        self.connect("key-press-event", self.on_keypress)
         self.on_playlist_data_change(self.data)  # Load initial playlist data
 
         self.show_all()
@@ -77,6 +78,10 @@ class Playlist(Gtk.Window):
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_PRIMARY:
             self.paste_clip(button)
+
+    def on_keypress(self, widget: Gtk.Widget, key: Gdk.EventKey):
+        if key.keyval == Gdk.KEY_space:
+            TimeControl.toggle_play_stop()
 
     def on_draw_background(self, area: Gtk.DrawingArea, context: cairo.Context):
         draw_background_grid(area, context, self.track_height, self.sub_beat_width,
