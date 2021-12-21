@@ -61,10 +61,9 @@ class LineSerializableCollection(ABC, Generic[T]):
         if os.path.isfile(self.filename):
             with open(self.filename, "r") as f:
                 for line in f:
-                    print(T)
                     self._data.append(loader(line))
 
-    def add_data(self, data_obj: T) -> None:
+    def add(self, data_obj: T) -> None:
         """
         Adds a data object to this collection.
         :param data_obj: The object to add.
@@ -73,7 +72,7 @@ class LineSerializableCollection(ABC, Generic[T]):
         self._data.append(data_obj)
         self.on_change()
 
-    def remove_data(self, data_obj: T) -> None:
+    def remove(self, data_obj: T) -> None:
         """
         Removes a data object form this collection.
         :param data_obj: The object to remove.

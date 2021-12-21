@@ -1,17 +1,17 @@
 from Session import session_close_method
 from Project import Filestructure as FS
+from Project.LineSerializable import LineSerializableCollection
+from Project.PlaylistClipData import PlaylistClipData
 
 
-class PlaylistData:
+class PlaylistData(LineSerializableCollection[PlaylistClipData]):
 
     def __init__(self):
-        self.filename = f"{FS.DATA_DIR}/playlist.jdp"
+        super().__init__()
+        self.load(PlaylistClipData.load_from_line)
 
-    def load(self):
-        pass
-
-    def save(self):
-        pass
+    def filename(self) -> str:
+        return f"{FS.DATA_DIR}/playlist.jdp"
 
     ################
     # STATIC STUFF #

@@ -58,7 +58,7 @@ def test_save_midi_clip():
         for octave in range(MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
                 data = (f"{note}{octave}", beat % 16)
-                me.clip.add_note(MidiNote(*data))
+                me.clip.add(MidiNote(*data))
                 saved.add(data)
                 beat += 1
 
@@ -88,10 +88,10 @@ def test_save_midi_clip_with_delete():
                 data = (f"{note}{octave}", beat % 16)
 
                 note = MidiNote(*data)
-                me.clip.add_note(note)
+                me.clip.add(note)
 
                 if beat % 3 == 0:
-                    me.clip.remote_note(note)
+                    me.clip.remove(note)
                 else:
                     saved.add(data)
 

@@ -155,7 +155,7 @@ class MidiEditor(Gtk.Window):
             note_ui = MidiNote(note)
             note_ui.set_size_request(self.beat_width, self.key_height)
             self.notes_area.put(note_ui, self.beat_width * note.beat, y)
-            note_ui.add_delete_note_listener(lambda n: self.clip.remote_note(n.note))
+            note_ui.add_delete_note_listener(lambda n: self.clip.remove_note(n.note))
 
         self.notes_area.show_all()
 

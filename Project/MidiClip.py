@@ -1,8 +1,8 @@
 from Project import Filestructure as FS
 from Project.MidiNote import MidiNote
-from typing import List
 from Session import session_close_method
 from Project.LineSerializable import LineSerializableCollection
+from typing import List
 
 
 class MidiClip(LineSerializableCollection[MidiNote]):
@@ -21,23 +21,7 @@ class MidiClip(LineSerializableCollection[MidiNote]):
 
     @property
     def filename(self) -> str:
-        return f"{FS.DATA_DIR}/midi/{self.clip_number}.jdm"
-
-    def add_note(self, note: MidiNote) -> None:
-        """
-        Adds a note to this clip.
-        :param note: The note to add.
-        :return: None.
-        """
-        self.add_data(note)
-
-    def remote_note(self, note: MidiNote) -> None:
-        """
-        Removes a note from this clip.
-        :param note: The note to remove.
-        :return: None.
-        """
-        self.remove_data(note)
+        return f"{FS.DATA_DIR}/midi/{self._clip_number}.jdm"
 
     ##############
     # PROPERTIES #

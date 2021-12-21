@@ -52,13 +52,13 @@ def test_create_midi_clip():
         for octave in range(0, MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
 
-                me.clip.add_note(MidiNote(f"{note}{octave}", beat))
+                me.clip.add(MidiNote(f"{note}{octave}", beat))
 
                 beat += 0.25
                 if beat > 8:
                     beat -= 8
 
         try:
-            me.clip.add_note(MidiNote("C50", 0))
+            me.clip.add(MidiNote("C50", 0))
         except MidiEditor.NoteOutOfRangeException as e:
             assert True

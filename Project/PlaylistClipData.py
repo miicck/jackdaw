@@ -1,4 +1,7 @@
-class PlaylistClipData:
+from Project.LineSerializable import LineSerializable
+
+
+class PlaylistClipData(LineSerializable):
 
     def __init__(self, track: int, beat: float):
         self.track = track
@@ -7,8 +10,8 @@ class PlaylistClipData:
     def save_to_line(self) -> str:
         return f"{self.track} {self.beat}"
 
-    @staticmethod
-    def load_from_line(self, line: str) -> 'PlaylistClipData':
+    @classmethod
+    def load_from_line(cls, line: str) -> 'PlaylistClipData':
         line = line.split()
         track = int(line[0])
         beat = float(line[1])
