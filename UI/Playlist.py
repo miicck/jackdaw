@@ -107,7 +107,12 @@ class Playlist(Gtk.Window):
         self.create_clip(1, track, beat)
 
     def create_clip(self, number: int, track: int, beat: float, autosave=True):
-        clip = PlaylistClip(number, track, beat)
+
+        def on_remove_clip(clip):
+            self.clips_area.remove(clip)
+            self.save_to_file()
+
+        clip = PlaylistClip(number, track, beat, lambda: on_remove_clip(clip))
         clip.set_size_request(self.bar_width, self.track_height)
         self.clips_area.put(clip, beat * self.beat_width, track * self.track_height)
         self.clips_area.show_all()

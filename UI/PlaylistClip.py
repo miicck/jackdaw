@@ -10,8 +10,9 @@ from Project import Filestructure as FS
 
 class PlaylistClip(Gtk.DrawingArea):
 
-    def __init__(self, clip_number, track: int, beat: float):
+    def __init__(self, clip_number, track: int, beat: float, destroy_callback: callable = None):
         super().__init__()
+        self.destroy_callback = destroy_callback
         self.clip_number = clip_number
         self.track = track
         self.beat = beat
@@ -23,6 +24,8 @@ class PlaylistClip(Gtk.DrawingArea):
 
         if button.button == Gdk.BUTTON_SECONDARY:
             # Destroy note on right click
+            if self.destroy_callback is not None:
+                self.destroy_callback()
             self.destroy()
             return
 
