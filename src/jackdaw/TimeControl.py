@@ -27,11 +27,11 @@ class TimeControl:
 
     @staticmethod
     def time_to_beats(time):
-        return time * TimeControl._bpm / 60.0
+        return time * TimeControl.get_bpm() / 60.0
 
     @staticmethod
     def beats_to_time(beats):
-        return 60.0 * beats / TimeControl._bpm
+        return 60.0 * beats / TimeControl.get_bpm()
 
     @staticmethod
     def play():
@@ -48,7 +48,10 @@ class TimeControl:
 
     @staticmethod
     def toggle_play_pause():
-        TimeControl._paused = not TimeControl._paused
+        if TimeControl._paused:
+            TimeControl.play()
+        else:
+            TimeControl.pause()
 
     @staticmethod
     def toggle_play_stop():

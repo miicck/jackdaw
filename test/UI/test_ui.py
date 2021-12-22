@@ -7,6 +7,12 @@ from jackdaw import MusicTheory
 from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw.Gi import add_timeout
 from jackdaw.UI.Router import Router
+from jackdaw.UI.ControlPanel import ControlPanel
+
+
+def test_control_panel():
+    with UiTestSession():
+        ControlPanel()
 
 
 def test_open_playlist():
@@ -114,8 +120,8 @@ def test_open_close_router():
 
 
 def test_router_add_track_signals():
-    with UiTestSession():
+    with UiTestSession(main_loop_ms=400):
         rt = Router.open()
-        for x in range(1, 10):
-            for y in range(1, 10):
+        for x in range(1, 4):
+            for y in range(1, 4):
                 rt.add_track_signal(x * 100, y * 100)

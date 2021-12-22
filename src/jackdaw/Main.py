@@ -8,10 +8,6 @@ def start_main_loop():
     Gtk.main()
 
 
-def open_project_in_current_dir():
+if __name__ == "__main__":  # pragma: no cover
     ControlPanel()
     start_main_loop()
-
-
-if __name__ == "__main__":
-    open_project_in_current_dir()

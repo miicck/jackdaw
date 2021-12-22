@@ -1,6 +1,7 @@
 from ..Utils.UiTestSession import UiTestSession
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
+from jackdaw.UI.Router import Router
 from jackdaw.Data.MidiNoteData import MidiNoteData
 from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw import MusicTheory
@@ -108,3 +109,13 @@ def test_save_midi_clip_with_delete():
             saved.remove(data)
 
     assert len(saved) == 0
+
+
+def test_save_router():
+    with UiTestSession(save_project=True):
+        r = Router.open()
+        r.add_track_signal(100, 100)
+
+    with UiTestSession():
+        r = Router.open()
+        assert len(r.data.components) == 1
