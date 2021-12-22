@@ -1,10 +1,10 @@
 from jackdaw.UI.ControlPanel import ControlPanel
-from jackdaw.Gi import Gtk, Gdk, GLib
+from jackdaw.Gi import Gtk, add_timeout
 from jackdaw.TimeControl import TimeControl
 
 
 def start_main_loop():
-    Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, 16, lambda e: TimeControl.update(), None)
+    add_timeout(TimeControl.update, 16, repeats=0)
     Gtk.main()
 
 

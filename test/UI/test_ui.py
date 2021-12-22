@@ -5,6 +5,7 @@ from jackdaw.Data.MidiNoteData import MidiNoteData
 from jackdaw.Data.MidiClipData import MidiClipData
 from jackdaw import MusicTheory
 from jackdaw.Data.PlaylistClipData import PlaylistClipData
+from jackdaw.Gi import add_timeout
 
 
 def test_open_playlist():
@@ -25,9 +26,14 @@ def test_open_close_midi_editor():
 
 
 def test_open_many_midi_editors():
-    with UiTestSession(main_loop_ms=500):
-        for i in range(10):
-            assert MidiEditor.open(i) is not None
+    time_between = 50
+    total = 20
+    with UiTestSession(main_loop_ms=time_between * (total + 2)):
+        def add_editor():
+            number = len(MidiEditor.open_editors) + 1
+            assert MidiEditor.open(number) is not None
+
+        add_timeout(add_editor, time_between, repeats=total)
 
 
 def test_create_playlist_clips():
