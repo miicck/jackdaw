@@ -1,7 +1,6 @@
 import cairo
 from jackdaw.Session import session_close_method
 from jackdaw.Gi import Gtk, Gdk
-from jackdaw.UI.RouterComponents.TrackSignal import TrackSignal
 from jackdaw.RuntimeChecks import must_be_called_from
 from jackdaw.UI.Colors import Colors
 from jackdaw.Data.RouterData import RouterData
@@ -9,7 +8,7 @@ from jackdaw.Data.RouterComponentData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
 
 # This is needed so we can enumerate RouterComponent subclasses
-from jackdaw.UI.RouterComponents import *
+import jackdaw.UI.RouterComponents
 
 
 class Router(Gtk.Window):
@@ -49,7 +48,8 @@ class Router(Gtk.Window):
         for comp_data in data.components:
 
             if comp_data.component_type not in component_types:
-                raise Exception(f"Unknown router component type: {comp_data.component_type}")
+                raise Exception(f"Unknown router component type: {comp_data.component_type}\n"
+                                f"Is not one of {list(component_types)}")
 
             component = component_types[comp_data.component_type]()
             self.surface.put(component, comp_data.position[0], comp_data.position[1])
