@@ -1,8 +1,8 @@
 from Gi import Gtk, Gdk
 import cairo
-from UI.Drawing import draw_background_grid
 from UI.PlaylistClip import PlaylistClip
 from UI.Playhead import Playhead
+from UI.Drawing import draw_background_grid
 from TimeControl import TimeControl
 from Session import session_close_method
 from Data.PlaylistData import PlaylistData

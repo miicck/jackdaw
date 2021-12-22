@@ -6,6 +6,7 @@ from Data.PlaylistClipData import PlaylistClipData
 from Data.MidiClipData import MidiClipData
 from typing import Callable
 from Data import data
+from TimeControl import TimeControl
 
 
 class PlaylistClip(Gtk.DrawingArea):
@@ -31,6 +32,10 @@ class PlaylistClip(Gtk.DrawingArea):
             if button.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
                 MidiEditor.open(self.clip.clip_number)
 
+            # Set the playhead to the start of this clip
+            TimeControl.set_playhead_time(TimeControl.beats_to_time(self.clip.beat))
+
+            # Set the clip number we're pasting to this clip
             from UI.Playlist import Playlist
             Playlist.paste_clip_number = self.clip.clip_number
             return

@@ -3,8 +3,8 @@ from Gi import Gtk, Gdk
 import cairo
 from UI.MidiNote import MidiNote
 from UI.Playhead import Playhead
-from TimeControl import TimeControl
 from UI.Drawing import draw_background_grid
+from TimeControl import TimeControl
 from Session import session_close_method
 import MusicTheory
 from Data.MidiNoteData import MidiNoteData as MidiNoteData
@@ -13,48 +13,6 @@ from Data import data
 
 
 class MidiEditor(Gtk.Window):
-    # The currently-open Midi editors
-    open_editors = dict()
-    MAX_OCTAVE = 8
-
-    class NoteOutOfRangeException(Exception):
-        def __init__(self, message):
-            self.message = message
-
-    # Open a midi editor for a given clip
-    @staticmethod
-    def open(clip_number: int):
-        if clip_number in MidiEditor.open_editors:
-            editor = MidiEditor.open_editors[clip_number]
-        else:
-            editor = MidiEditor(clip_number)
-            MidiEditor.open_editors[clip_number] = editor
-
-        assert editor.clip.clip_number == clip_number
-        editor.present()
-        return editor
-
-    @staticmethod
-    @session_close_method
-    def close_all():
-        for clip_number in list(MidiEditor.open_editors):
-            MidiEditor.close(clip_number)
-
-    @staticmethod
-    def close(clip_number: int):
-        if clip_number in MidiEditor.open_editors:
-            MidiEditor.open_editors[clip_number].destroy()
-            assert clip_number not in MidiEditor.open_editors
-
-    @staticmethod
-    def note_name_to_index(name: str):
-        if "#" in name:
-            octave = int(name[2:])
-            note = name[:2]
-        else:
-            octave = int(name[1:])
-            note = name[0]
-        return octave * 12 + MusicTheory.NOTES.index(note)
 
     def __init__(self, clip_number: int):
         super().__init__(title=f"Midi Editor (clip {clip_number})")
@@ -62,8 +20,11 @@ class MidiEditor(Gtk.Window):
         self.clip = data.midi_clip(clip_number)
         self.clip.add_change_listener(self.on_clip_change)
 
-        self.set_default_size(800, 800)
         self.key_height = 16  # The height in px of a keyboard key
+
+        # Start size is 3 octaves
+        start_size = self.key_height * 12 * 3
+        self.set_default_size(start_size, start_size)
 
         # Set up the keys to display
         self.keys = []
@@ -88,7 +49,7 @@ class MidiEditor(Gtk.Window):
         # The keyboard bit on the left
         keyboard_area = Gtk.DrawingArea()
         keyboard_area.set_size_request(self.keyboard_depth, self.total_height)
-        keyboard_area.connect("draw", self.draw_keyboard)
+        keyboard_area.connect("draw", self.on_draw_keyboard)
         left_right_box.pack_start(keyboard_area, False, False, 0)
 
         # The scrollable area containing notes
@@ -102,7 +63,7 @@ class MidiEditor(Gtk.Window):
         # The bit containing the notes
         notes_background = Gtk.DrawingArea()
         notes_background.set_size_request(8192, self.total_height)
-        notes_background.connect("draw", self.draw_background)
+        notes_background.connect("draw", self.on_draw_background)
         self.notes_area.add(notes_background)
 
         # Add click event
@@ -112,7 +73,23 @@ class MidiEditor(Gtk.Window):
         playhead = Playhead()
 
         def position_playhead(time):
-            x = TimeControl.time_to_beats(time) * self.beat_width
+
+            beat_time = TimeControl.time_to_beats(time)
+
+            # Find the last beat when a clip
+            # that matches this one was started.
+            last_started_clip_beat = -1.0  # -1 => no clips found
+            for clip in data.playlist.clips:
+                if clip.clip_number == self.clip.clip_number:
+                    if last_started_clip_beat < clip.beat <= beat_time:
+                        last_started_clip_beat = clip.beat
+
+            if last_started_clip_beat < 0:
+                beat_time = 0
+            else:
+                beat_time -= last_started_clip_beat
+
+            x = beat_time * self.beat_width
             self.notes_area.move(playhead, x, 0)
             self.notes_area.show_all()
 
@@ -123,15 +100,38 @@ class MidiEditor(Gtk.Window):
 
         self.show_all()
         self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self.clip.clip_number))
+        self.connect("key-press-event", self.on_keypress)
 
         # Invoke clip change to load clip data
         self.on_clip_change(self.clip)
+
+    def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
+        height = area.get_allocated_height()
+
+        # Work out which note was clicked
+        key_index = int(height - button.y) // self.key_height
+        if key_index < 0 or key_index >= len(self.keys):
+            return  # Invalid key
+        note = self.keys[key_index]
+
+        # Snap to nearest sub-beat
+        beat = (int(button.x) // self.sub_beat_width) / 4.0
+
+        self.clip.add(MidiNoteData(note, beat))
+
+    ###################
+    # EVENT CALLBACKS #
+    ###################
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
         if button.button == Gdk.BUTTON_PRIMARY:
             self.paste_note(area, button)
             return
+
+    def on_keypress(self, widget: Gtk.Widget, key: Gdk.EventKey):
+        if key.keyval == Gdk.KEY_space:
+            TimeControl.toggle_play_stop()
 
     def on_clip_change(self, clip: MidiClipData):
 
@@ -159,41 +159,7 @@ class MidiEditor(Gtk.Window):
 
         self.notes_area.show_all()
 
-    def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
-        height = area.get_allocated_height()
-
-        # Work out which note was clicked
-        key_index = int(height - button.y) // self.key_height
-        if key_index < 0 or key_index >= len(self.keys):
-            return  # Invalid key
-        note = self.keys[key_index]
-
-        # Snap to nearest sub-beat
-        beat = (int(button.x) // self.sub_beat_width) / 4.0
-
-        self.clip.add(MidiNoteData(note, beat))
-
-    @property
-    def keyboard_depth(self):
-        return self.key_height * 4
-
-    @property
-    def total_height(self):
-        return len(self.keys) * self.key_height
-
-    @property
-    def sub_beat_width(self):
-        return self.key_height  # Make sub beats square
-
-    @property
-    def beat_width(self):
-        return self.sub_beat_width * 4
-
-    @property
-    def bar_width(self):
-        return self.beat_width * 4
-
-    def draw_keyboard(self, area: Gtk.DrawingArea, context: cairo.Context):
+    def on_draw_keyboard(self, area: Gtk.DrawingArea, context: cairo.Context):
         height = area.get_allocated_height()
         width = area.get_allocated_width()
 
@@ -237,7 +203,7 @@ class MidiEditor(Gtk.Window):
 
         context.fill()
 
-    def draw_background(self, area: Gtk.DrawingArea, context: cairo.Context):
+    def on_draw_background(self, area: Gtk.DrawingArea, context: cairo.Context):
 
         def is_dark_row(i):
             if i < 0 or i >= len(self.keys):
@@ -246,3 +212,74 @@ class MidiEditor(Gtk.Window):
 
         draw_background_grid(area, context, self.key_height,
                              self.sub_beat_width, is_dark_row)
+
+    ##############
+    # PROPERTIES #
+    ##############
+
+    @property
+    def keyboard_depth(self):
+        return self.key_height * 4
+
+    @property
+    def total_height(self):
+        return len(self.keys) * self.key_height
+
+    @property
+    def sub_beat_width(self):
+        return self.key_height  # Make sub beats square
+
+    @property
+    def beat_width(self):
+        return self.sub_beat_width * 4
+
+    @property
+    def bar_width(self):
+        return self.beat_width * 4
+
+    ################
+    # STATIC STUFF #
+    ################
+
+    # The currently-open Midi editors
+    open_editors = dict()
+    MAX_OCTAVE = 8
+
+    class NoteOutOfRangeException(Exception):
+        def __init__(self, message):
+            self.message = message
+
+    # Open a midi editor for a given clip
+    @staticmethod
+    def open(clip_number: int):
+        if clip_number in MidiEditor.open_editors:
+            editor = MidiEditor.open_editors[clip_number]
+        else:
+            editor = MidiEditor(clip_number)
+            MidiEditor.open_editors[clip_number] = editor
+
+        assert editor.clip.clip_number == clip_number
+        editor.present()
+        return editor
+
+    @staticmethod
+    @session_close_method
+    def close_all():
+        for clip_number in list(MidiEditor.open_editors):
+            MidiEditor.close(clip_number)
+
+    @staticmethod
+    def close(clip_number: int):
+        if clip_number in MidiEditor.open_editors:
+            MidiEditor.open_editors[clip_number].destroy()
+            assert clip_number not in MidiEditor.open_editors
+
+    @staticmethod
+    def note_name_to_index(name: str):
+        if "#" in name:
+            octave = int(name[2:])
+            note = name[:2]
+        else:
+            octave = int(name[1:])
+            note = name[0]
+        return octave * 12 + MusicTheory.NOTES.index(note)

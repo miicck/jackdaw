@@ -4,7 +4,7 @@ from TimeControl import TimeControl
 
 
 def start_main_loop():
-    Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, 16, TimeControl.update, None)
+    Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, 16, lambda e: TimeControl.update(), None)
     Gtk.main()
 
 
