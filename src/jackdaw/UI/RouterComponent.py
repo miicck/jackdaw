@@ -1,6 +1,7 @@
 import cairo
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.RoutingNode import RoutingNode
+from jackdaw.UI.Colors import Colors
 
 
 class RouterComponent(Gtk.Grid):
@@ -68,7 +69,7 @@ class RouterComponent(Gtk.Grid):
     def on_draw_header(self, widget: Gtk.Widget, context: cairo.Context):
         width = widget.get_allocated_width()
         height = widget.get_allocated_height()
-        context.set_source_rgb(1.0, 1.0, 1.0)
+        context.set_source_rgb(*Colors.router_component_header)
         context.rectangle(0, 0, width, height)
         context.fill()
 

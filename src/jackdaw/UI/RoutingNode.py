@@ -1,6 +1,6 @@
 import cairo
-
 from jackdaw.Gi import Gtk
+from jackdaw.UI.Colors import Colors
 
 
 class RoutingNode(Gtk.Box):
@@ -25,13 +25,20 @@ class RoutingNode(Gtk.Box):
         width = widget.get_allocated_width()
         height = widget.get_allocated_height()
 
-        size = min(width, height) - 4
+        size = min(width, height)
         half = size // 2
         x_centre = half if self.is_output else width - half
         y_centre = half
 
-        context.set_source_rgb(0.5, 0.5, 0.5)
+        size -= 4
+        half -= 2
+
+        context.set_source_rgb(*Colors.routing_node_border)
         context.arc(x_centre, y_centre, half, 0, 3.14159 * 2)
+        context.fill()
+
+        context.set_source_rgb(*Colors.routing_node_centre)
+        context.arc(x_centre, y_centre, half // 2, 0, 3.14159 * 2)
         context.fill()
 
     @property

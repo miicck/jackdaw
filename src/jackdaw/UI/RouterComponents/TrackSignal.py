@@ -6,8 +6,7 @@ class TrackSignal(RouterComponent):
 
     def __init__(self):
         super().__init__()
-        self.content = Gtk.ScrolledWindow()
-        self.content.set_size_request(128, 128)
+        self.content = Gtk.Button(label="Track")
 
         self.add_input_channel()
         self.add_input_channel("Input channel 1")

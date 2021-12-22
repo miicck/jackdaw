@@ -7,3 +7,6 @@ class Colors:
     sub_beat_marker = (0.27, 0.27, 0.27)
     playlist_clip = (0.5, 0.5, 0.5, 0.5)
     playlist_midi_note = (0.6, 0.6, 0.6)
+    router_component_header = (0.2, 0.2, 0.2)
+    routing_node_border = (0.5, 0.5, 0.5)
+    routing_node_centre = (0.2, 0.2, 0.2)
