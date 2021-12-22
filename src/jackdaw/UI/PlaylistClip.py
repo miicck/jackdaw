@@ -7,6 +7,7 @@ from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw.Data.MidiClipData import MidiClipData
 from jackdaw.Data import data
 from jackdaw.TimeControl import TimeControl
+import jackdaw.UI.Playlist as PlaylistModule  # Imported this way to avoid circular imports
 
 
 class PlaylistClip(Gtk.DrawingArea):
@@ -36,8 +37,7 @@ class PlaylistClip(Gtk.DrawingArea):
             TimeControl.set_playhead_time(TimeControl.beats_to_time(self.clip.beat))
 
             # Set the clip number we're pasting to this clip
-            from UI.Playlist import Playlist
-            Playlist.paste_clip_number = self.clip.clip_number
+            PlaylistModule.Playlist.paste_clip_number = self.clip.clip_number
             return
 
         if button.button == Gdk.BUTTON_SECONDARY:

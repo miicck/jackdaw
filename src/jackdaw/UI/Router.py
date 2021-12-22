@@ -1,7 +1,9 @@
+import cairo
 from jackdaw.Session import session_close_method
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.RouterComponents.TrackSignal import TrackSignal
 from jackdaw.RuntimeChecks import must_be_called_from
+from jackdaw.UI.Colors import Colors
 
 
 class Router(Gtk.Window):
@@ -21,6 +23,7 @@ class Router(Gtk.Window):
         background = Gtk.DrawingArea()
         background.set_size_request(8192, 8192)
         background.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        background.connect("draw", self.on_draw_background)
         background.connect("button-press-event", self.on_click_background)
         self.surface.add(background)
 
@@ -34,6 +37,13 @@ class Router(Gtk.Window):
     ###################
     # EVENT CALLBACKS #
     ###################
+
+    def on_draw_background(self, widget: Gtk.Widget, context: cairo.Context):
+        width = widget.get_allocated_width()
+        height = widget.get_allocated_height()
+        context.set_source_rgb(*Colors.background)
+        context.rectangle(0, 0, width, height)
+        context.fill()
 
     def on_click_background(self, area: Gtk.Widget, button: Gdk.EventButton):
 

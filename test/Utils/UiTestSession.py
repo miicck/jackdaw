@@ -1,5 +1,5 @@
 import time
-from jackdaw.Gi import Gtk, Gdk, GLib, add_timeout
+from jackdaw.Gi import Gtk, add_timeout
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Data import Filestructure as FS
 from jackdaw.Session import call_session_close_methods
@@ -8,7 +8,7 @@ from jackdaw.Main import start_main_loop
 
 class UiTestSession:
 
-    def __init__(self, main_loop_ms=100, pause_after_ms=100, save_project=False):
+    def __init__(self, main_loop_ms=50, pause_after_ms=20, save_project=False):
         self.main_loop_ms = main_loop_ms
         self.pause_after_ms = pause_after_ms
         self.save_project = save_project
