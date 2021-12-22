@@ -1,12 +1,12 @@
-from Gi import Gtk, Gdk
 import cairo
-from UI.MidiEditor import MidiEditor
-from UI.Colors import Colors
-from Data.PlaylistClipData import PlaylistClipData
-from Data.MidiClipData import MidiClipData
 from typing import Callable
-from Data import data
-from TimeControl import TimeControl
+from jackdaw.Gi import Gtk, Gdk
+from jackdaw.UI.MidiEditor import MidiEditor
+from jackdaw.UI.Colors import Colors
+from jackdaw.Data.PlaylistClipData import PlaylistClipData
+from jackdaw.Data.MidiClipData import MidiClipData
+from jackdaw.Data import data
+from jackdaw.TimeControl import TimeControl
 
 
 class PlaylistClip(Gtk.DrawingArea):

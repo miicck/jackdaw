@@ -1,4 +1,4 @@
-from Data.LineSerializable import LineSerializable
+from jackdaw.Data.LineSerializable import LineSerializable
 
 
 class PlaylistClipData(LineSerializable):

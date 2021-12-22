@@ -1,10 +1,10 @@
-from UI.Playlist import Playlist
-from UI.MidiEditor import MidiEditor
-from Data.MidiNoteData import MidiNoteData
-from Data.MidiClipData import MidiClipData
-from Test.Utils.UiTestSession import UiTestSession
-import MusicTheory
-from Data.PlaylistClipData import PlaylistClipData
+from ..Utils.UiTestSession import UiTestSession
+from jackdaw.UI.Playlist import Playlist
+from jackdaw.UI.MidiEditor import MidiEditor
+from jackdaw.Data.MidiNoteData import MidiNoteData
+from jackdaw.Data.MidiClipData import MidiClipData
+from jackdaw import MusicTheory
+from jackdaw.Data.PlaylistClipData import PlaylistClipData
 
 
 def test_open_playlist():

@@ -1,9 +1,8 @@
 import os
-
-from Data import Filestructure as FS
-from Data.MidiNoteData import MidiNoteData
-from Session import session_close_method
-from Data.LineSerializable import LineSerializableCollection
+from jackdaw.Data import Filestructure as FS
+from jackdaw.Data.MidiNoteData import MidiNoteData
+from jackdaw.Session import session_close_method
+from jackdaw.Data.LineSerializable import LineSerializableCollection
 from typing import List, Iterable
 
 

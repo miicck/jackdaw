@@ -1,13 +1,13 @@
-from Gi import Gtk, Gdk
 import cairo
-from UI.PlaylistClip import PlaylistClip
-from UI.Playhead import Playhead
-from UI.Drawing import draw_background_grid
-from TimeControl import TimeControl
-from Session import session_close_method
-from Data.PlaylistData import PlaylistData
-from Data.PlaylistClipData import PlaylistClipData
-from Data import data
+from jackdaw.Gi import Gtk, Gdk
+from jackdaw.UI.PlaylistClip import PlaylistClip
+from jackdaw.UI.Playhead import Playhead
+from jackdaw.UI.Drawing import draw_background_grid
+from jackdaw.TimeControl import TimeControl
+from jackdaw.Session import session_close_method
+from jackdaw.Data.PlaylistData import PlaylistData
+from jackdaw.Data.PlaylistClipData import PlaylistClipData
+from jackdaw.Data import data
 
 
 class Playlist(Gtk.Window):

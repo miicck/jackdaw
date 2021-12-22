@@ -1,6 +1,6 @@
-from Gi import Gtk, Gdk, GLib
-from UI.Playlist import Playlist
-from TimeControl import TimeControl
+from jackdaw.Gi import Gtk, Gdk, GLib
+from jackdaw.UI.Playlist import Playlist
+from jackdaw.TimeControl import TimeControl
 
 
 class ControlPanel(Gtk.Window):

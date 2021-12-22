@@ -1,7 +1,7 @@
-from Session import session_close_method
-from Data import Filestructure as FS
-from Data.LineSerializable import LineSerializableCollection
-from Data.PlaylistClipData import PlaylistClipData
+from jackdaw.Session import session_close_method
+from jackdaw.Data import Filestructure as FS
+from jackdaw.Data.LineSerializable import LineSerializableCollection
+from jackdaw.Data.PlaylistClipData import PlaylistClipData
 
 
 class PlaylistData(LineSerializableCollection[PlaylistClipData]):

@@ -1,7 +1,7 @@
-from Gi import Gtk
 import cairo
-from UI.Colors import Colors
 from typing import Callable
+from jackdaw.Gi import Gtk
+from jackdaw.UI.Colors import Colors
 
 
 def draw_background_grid(area: Gtk.DrawingArea, context: cairo.Context,

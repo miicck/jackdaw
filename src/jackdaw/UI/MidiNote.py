@@ -1,7 +1,7 @@
-from Gi import Gtk, Gdk
 import cairo
-from Data.MidiNoteData import MidiNoteData as MidiNoteData
 from typing import Callable
+from jackdaw.Gi import Gtk, Gdk
+from jackdaw.Data.MidiNoteData import MidiNoteData
 
 
 class MidiNote(Gtk.DrawingArea):

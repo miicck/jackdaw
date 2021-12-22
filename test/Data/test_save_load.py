@@ -1,9 +1,9 @@
-from Test.Utils.UiTestSession import UiTestSession
-from UI.Playlist import Playlist
-from UI.MidiEditor import MidiEditor
-from Data.MidiNoteData import MidiNoteData
-from Data.PlaylistClipData import PlaylistClipData
-import MusicTheory
+from ..Utils.UiTestSession import UiTestSession
+from jackdaw.UI.Playlist import Playlist
+from jackdaw.UI.MidiEditor import MidiEditor
+from jackdaw.Data.MidiNoteData import MidiNoteData
+from jackdaw.Data.PlaylistClipData import PlaylistClipData
+from jackdaw import MusicTheory
 
 
 def test_save_playlist():

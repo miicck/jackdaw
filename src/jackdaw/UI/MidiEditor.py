@@ -1,15 +1,14 @@
-import TimeControl
-from Gi import Gtk, Gdk
 import cairo
-from UI.MidiNote import MidiNote
-from UI.Playhead import Playhead
-from UI.Drawing import draw_background_grid
-from TimeControl import TimeControl
-from Session import session_close_method
-import MusicTheory
-from Data.MidiNoteData import MidiNoteData as MidiNoteData
-from Data.MidiClipData import MidiClipData as MidiClipData
-from Data import data
+from jackdaw.Gi import Gtk, Gdk
+from jackdaw.UI.MidiNote import MidiNote
+from jackdaw.UI.Playhead import Playhead
+from jackdaw.UI.Drawing import draw_background_grid
+from jackdaw.TimeControl import TimeControl
+from jackdaw.Session import session_close_method
+from jackdaw import MusicTheory
+from jackdaw.Data.MidiNoteData import MidiNoteData
+from jackdaw.Data.MidiClipData import MidiClipData
+from jackdaw.Data import data
 
 
 class MidiEditor(Gtk.Window):

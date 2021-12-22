@@ -1,6 +1,6 @@
-from UI.ControlPanel import ControlPanel
-from Gi import Gtk, Gdk, GLib
-from TimeControl import TimeControl
+from jackdaw.UI.ControlPanel import ControlPanel
+from jackdaw.Gi import Gtk, Gdk, GLib
+from jackdaw.TimeControl import TimeControl
 
 
 def start_main_loop():
@@ -9,7 +9,7 @@ def start_main_loop():
 
 
 def open_project_in_current_dir():
-    cp = ControlPanel()
+    ControlPanel()
     start_main_loop()
 
 

@@ -64,7 +64,7 @@ class TimeControl:
         if not TimeControl._paused:
             TimeControl._time += 16.0 / 1000.0
 
-        from UI.Playhead import Playhead
+        from jackdaw.UI.Playhead import Playhead
         for p in Playhead.playheads:
             p.invoke_position_callback()
 

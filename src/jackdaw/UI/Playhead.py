@@ -1,7 +1,7 @@
-from Gi import Gtk
 import cairo
 from typing import Callable
-from TimeControl import TimeControl
+from jackdaw.Gi import Gtk
+from jackdaw.TimeControl import TimeControl
 
 
 class Playhead(Gtk.DrawingArea):
