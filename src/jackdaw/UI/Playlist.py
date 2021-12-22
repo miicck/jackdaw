@@ -8,11 +8,13 @@ from jackdaw.Session import session_close_method
 from jackdaw.Data.PlaylistData import PlaylistData
 from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw.Data import data
+from jackdaw.RuntimeChecks import must_be_called_from
 
 
 class Playlist(Gtk.Window):
 
     def __init__(self):
+        must_be_called_from(Playlist.open)
         super().__init__(title="Playlist")
         self.set_default_size(800, 800)
 
@@ -29,7 +31,7 @@ class Playlist(Gtk.Window):
         self.setup_background()
         self.setup_playhead()
 
-        self.connect("destroy", self.on_destroy)  # Connect destroy event
+        self.connect("destroy", lambda e: Playlist.close())
         self.connect("key-press-event", self.on_keypress)
         self.on_playlist_data_change(self.data)  # Load initial playlist data
 
@@ -46,7 +48,7 @@ class Playlist(Gtk.Window):
         background.set_size_request(self.clip_area_width, self.clip_area_width)
         background.connect("draw", self.on_draw_background)
         background.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        background.connect("button-press-event", self.on_click)
+        background.connect("button-press-event", self.on_background_click)
         self.clips_area.add(background)
 
     def setup_playhead(self):
@@ -72,10 +74,7 @@ class Playlist(Gtk.Window):
     # EVENT CALLBACKS #
     ###################
 
-    def on_destroy(self, e):
-        Playlist.open_playlist = None
-
-    def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
+    def on_background_click(self, widget: Gtk.Widget, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_PRIMARY:
             self.paste_clip(button)
 
@@ -132,22 +131,20 @@ class Playlist(Gtk.Window):
     # STATIC STUFF #
     ################
 
-    open_playlist = None
     paste_clip_number = 1
+    _open_playlist: 'Playlist' = None
 
     @staticmethod
     def open():
-        if Playlist.open_playlist is None:
-            Playlist.open_playlist = Playlist()
-
-        playlist = Playlist.open_playlist
-        playlist.present()
-        return playlist
+        if Playlist._open_playlist is None:
+            Playlist._open_playlist = Playlist()
+        Playlist._open_playlist.present()
+        return Playlist._open_playlist
 
     @staticmethod
     @session_close_method
     def close():
-        if Playlist.open_playlist is None:
+        if Playlist._open_playlist is None:
             return
-
-        Playlist.open_playlist.destroy()
+        Playlist._open_playlist.destroy()
+        Playlist._open_playlist = None

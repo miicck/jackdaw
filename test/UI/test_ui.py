@@ -6,6 +6,7 @@ from jackdaw.Data.MidiClipData import MidiClipData
 from jackdaw import MusicTheory
 from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw.Gi import add_timeout
+from jackdaw.UI.Router import Router
 
 
 def test_open_playlist():
@@ -26,25 +27,23 @@ def test_open_close_midi_editor():
 
 
 def test_open_many_midi_editors():
-    time_between = 50
-    total = 20
-    with UiTestSession(main_loop_ms=time_between * (total + 2)):
+    with UiTestSession() as ts:
         def add_editor():
             number = len(MidiEditor.open_editors) + 1
             assert MidiEditor.open(number) is not None
 
-        add_timeout(add_editor, time_between, repeats=total)
+        add_timeout(add_editor, ts.main_loop_ms // 100, repeats=10)
 
 
 def test_create_playlist_clips():
     with UiTestSession():
-        pl = Playlist()
+        pl = Playlist.open()
         for i in range(100):
             pl.data.add(PlaylistClipData(i, i, i % 16))
 
 
 def test_create_midi_clip():
-    with UiTestSession(main_loop_ms=500):
+    with UiTestSession():
         pl = Playlist.open()
         pl.data.add(PlaylistClipData(1, 0, 0))
         me = MidiEditor.open(1)
@@ -103,3 +102,20 @@ def test_create_unique_clip_no_midi():
         # and no midi should have been created on disk
         assert len({c.clip.clip_number for c in pl.ui_clips}) == 1
         assert len(list(MidiClipData.clips_on_disk())) == 0
+
+
+def test_open_close_router():
+    with UiTestSession() as ts:
+        Router.open()
+        qt = ts.main_loop_ms // 4
+        add_timeout(Router.close, qt)
+        add_timeout(Router.open, qt * 2)
+        add_timeout(Router.close, qt * 3)
+
+
+def test_router_add_track_signals():
+    with UiTestSession():
+        rt = Router.open()
+        for x in range(1, 10):
+            for y in range(1, 10):
+                rt.add_track_signal(x * 100, y * 100)

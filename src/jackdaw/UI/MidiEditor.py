@@ -9,11 +9,13 @@ from jackdaw import MusicTheory
 from jackdaw.Data.MidiNoteData import MidiNoteData
 from jackdaw.Data.MidiClipData import MidiClipData
 from jackdaw.Data import data
+from jackdaw.RuntimeChecks import must_be_called_from
 
 
 class MidiEditor(Gtk.Window):
 
     def __init__(self, clip_number: int):
+        must_be_called_from(MidiEditor.open)
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 
         self.clip = data.midi_clip(clip_number)

@@ -1,5 +1,5 @@
 import time
-from jackdaw.Gi import Gtk, Gdk, GLib
+from jackdaw.Gi import Gtk, Gdk, GLib, add_timeout
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Data import Filestructure as FS
 from jackdaw.Session import call_session_close_methods
@@ -9,6 +9,7 @@ from jackdaw.Main import start_main_loop
 class UiTestSession:
 
     def __init__(self, main_loop_ms=100, pause_after_ms=100, save_project=False):
+        self.main_loop_ms = main_loop_ms
         self.pause_after_ms = pause_after_ms
         self.save_project = save_project
         TimeControl.play()
@@ -16,12 +17,11 @@ class UiTestSession:
         def stop_session():
             call_session_close_methods()
             Gtk.main_quit()
-            return False  # Don't invoke callback again
 
-        Gdk.threads_add_timeout(GLib.PRIORITY_HIGH_IDLE, main_loop_ms, lambda e: stop_session(), None)
+        add_timeout(stop_session, main_loop_ms)
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         start_main_loop()
