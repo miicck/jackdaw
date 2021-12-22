@@ -2,6 +2,9 @@ import cairo
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.RoutingNode import RoutingNode
 from jackdaw.UI.Colors import Colors
+from jackdaw.Data.RouterComponentData import RouterComponentData
+from jackdaw.Data.RouterData import RouterData
+from typing import Union
 
 
 class RouterComponent(Gtk.Grid):
@@ -9,12 +12,17 @@ class RouterComponent(Gtk.Grid):
     def __init__(self):
         super().__init__()
 
+        self.data: Union[RouterComponentData, None] = None
+
         self.header_bar = Gtk.DrawingArea()
         self.header_bar.set_size_request(0, 16)
-        self.header_bar.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON1_MOTION_MASK)
+        self.header_bar.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
+                                   Gdk.EventMask.BUTTON1_MOTION_MASK |
+                                   Gdk.EventMask.BUTTON_RELEASE_MASK)
         self.header_bar.connect("draw", self.on_draw_header)
         self.header_bar.connect("button-press-event", self.on_click_header)
         self.header_bar.connect("motion-notify-event", self.on_drag_header)
+        self.header_bar.connect("button-release-event", self.on_unclick_header)
         self.drag_start = [0, 0]
         self.attach(self.header_bar, 1, -1, 1, 1)
 
@@ -55,8 +63,12 @@ class RouterComponent(Gtk.Grid):
             return
 
         if button.button == Gdk.BUTTON_SECONDARY:
+            RouterData.get().remove(self.data)
             self.destroy()
             return
+
+    def on_unclick_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
+        RouterData.get().save()
 
     def on_drag_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
         parent: Gtk.Fixed = self.get_parent()
@@ -64,6 +76,7 @@ class RouterComponent(Gtk.Grid):
             raise Exception("RouterComponent not attached to fixed parent!")
 
         x, y = self.translate_coordinates(parent, button.x - self.drag_start[0], button.y - self.drag_start[1])
+        self.data.position = (x, y)
         parent.move(self, x, y)
 
     def on_draw_header(self, widget: Gtk.Widget, context: cairo.Context):

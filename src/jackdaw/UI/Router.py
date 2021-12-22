@@ -52,6 +52,7 @@ class Router(Gtk.Window):
                                 f"Is not one of {list(component_types)}")
 
             component = component_types[comp_data.component_type]()
+            component.data = comp_data
             self.surface.put(component, comp_data.position[0], comp_data.position[1])
 
         self.surface.show_all()
