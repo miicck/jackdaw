@@ -1,14 +1,12 @@
 import cairo
 from typing import Callable
 from jackdaw.Gi import Gtk, Gdk
-from jackdaw.Data.MidiNoteData import MidiNoteData
 
 
 class MidiNote(Gtk.DrawingArea):
 
-    def __init__(self, note: MidiNoteData):
+    def __init__(self):
         super().__init__()
-        self.note = note
         self._delete_note_callbacks = []
 
         # Connect draw event
@@ -22,7 +20,7 @@ class MidiNote(Gtk.DrawingArea):
         if button.button == Gdk.BUTTON_SECONDARY:
             # Delete note on right click
             for c in self._delete_note_callbacks:
-                c(self)
+                c()
             self.destroy()
             return
 
@@ -33,6 +31,5 @@ class MidiNote(Gtk.DrawingArea):
         context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
 
-    def add_delete_note_listener(
-            self, callback: Callable[['MidiNote'], None]):
+    def add_delete_note_listener(self, callback: Callable[[], None]):
         self._delete_note_callbacks.append(callback)

@@ -2,8 +2,8 @@ import cairo
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.RoutingNode import RoutingNode
 from jackdaw.UI.Colors import Colors
-from jackdaw.Data.RouterComponentData import RouterComponentData
-from jackdaw.Data.RouterData import RouterData
+from jackdaw.Data import data
+from jackdaw.Data.ProjectData import RouterComponentData
 from typing import Union
 
 
@@ -63,11 +63,11 @@ class RouterComponent(Gtk.Grid):
             return
 
         if button.button == Gdk.BUTTON_SECONDARY:
-            RouterData.get().remove(self.data)
+            data.router_components.remove(self.data)
             return
 
     def on_unclick_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
-        RouterData.get().save()
+        print("TODO: Save new position here!")
 
     def on_drag_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
         parent: Gtk.Fixed = self.get_parent()
@@ -75,7 +75,7 @@ class RouterComponent(Gtk.Grid):
             raise Exception("RouterComponent not attached to fixed parent!")
 
         x, y = self.translate_coordinates(parent, button.x - self.drag_start[0], button.y - self.drag_start[1])
-        self.data.position = (x, y)
+        self.data.position.value = (x, y)
         parent.move(self, x, y)
 
     def on_draw_header(self, widget: Gtk.Widget, context: cairo.Context):

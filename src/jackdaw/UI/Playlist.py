@@ -5,9 +5,8 @@ from jackdaw.UI.Playhead import Playhead
 from jackdaw.UI.Drawing import draw_background_grid
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Session import session_close_method
-from jackdaw.Data.PlaylistData import PlaylistData
-from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw.Data import data
+from jackdaw.Data.ProjectData import PlaylistClipData
 from jackdaw.RuntimeChecks import must_be_called_from
 
 
@@ -18,8 +17,7 @@ class Playlist(Gtk.Window):
         super().__init__(title="Playlist")
         self.set_default_size(800, 800)
 
-        self.data = data.playlist
-        self.data.add_change_listener(self.on_playlist_data_change)
+        data.playlist_clips.add_on_change_listener(self.on_data_change)
 
         self.track_height = 64
         self.sub_beat_width = 8
@@ -33,8 +31,9 @@ class Playlist(Gtk.Window):
 
         self.connect("destroy", lambda e: Playlist.close())
         self.connect("key-press-event", self.on_keypress)
-        self.on_playlist_data_change(self.data)  # Load initial playlist data
 
+        # Load initial data + show
+        self.on_data_change()
         self.show_all()
 
     def setup_clips_area(self):
@@ -68,7 +67,13 @@ class Playlist(Gtk.Window):
         # Get beat/track position
         track = int(button.y) // self.track_height
         beat = int(button.x) // self.beat_width
-        self.data.add(PlaylistClipData(Playlist.paste_clip_number, track, beat))
+
+        new_clip = PlaylistClipData()
+        new_clip.clip.value = Playlist.paste_clip_number
+        new_clip.track.value = track
+        new_clip.beat.value = float(beat)
+
+        data.playlist_clips.add(new_clip)
 
     ###################
     # EVENT CALLBACKS #
@@ -86,20 +91,23 @@ class Playlist(Gtk.Window):
         draw_background_grid(area, context, self.track_height, self.sub_beat_width,
                              is_dark_row=lambda i: i % 2 == 0)
 
-    def on_playlist_data_change(self, playlist_data: PlaylistData):
+    def on_data_change(self):
 
         # Destroy old clips
         for c in self.ui_clips:
             c.destroy()
 
         # Create new clips
-        for clip_data in playlist_data.clips:
-            clip = PlaylistClip(clip_data)
-            clip.set_size_request(self.bar_width, self.track_height)
-            x, y = clip_data.beat * self.beat_width, clip_data.track * self.track_height
-            self.clips_area.put(clip, x, y)
+        for clip in data.playlist_clips:
+            x = clip.beat.value * self.beat_width
+            y = clip.track.value * self.track_height
+
+            clip_ui = PlaylistClip(clip)
+            clip_ui.set_size_request(self.bar_width, self.track_height)
+            self.clips_area.put(clip_ui, x, y)
             self.clips_area.show_all()
-            clip.add_delete_clip_listener(lambda c: playlist_data.remove(c.clip))
+
+            clip_ui.add_delete_clip_listener(lambda clip=clip: data.playlist_clips.remove(clip))
 
     ##############
     # PROPERTIES #

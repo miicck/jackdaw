@@ -1,10 +1,11 @@
 from ..Utils.UiTestSession import UiTestSession
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
-from jackdaw.Data.MidiNoteData import MidiNoteData
-from jackdaw.Data.MidiClipData import MidiClipData
+from jackdaw.Data import data
+from jackdaw.Data.ProjectData import MidiNoteData
+from jackdaw.Data.ProjectData import MidiClipData
+from jackdaw.Data.ProjectData import PlaylistClipData
 from jackdaw import MusicTheory
-from jackdaw.Data.PlaylistClipData import PlaylistClipData
 from jackdaw.Gi import add_timeout
 from jackdaw.UI.Router import Router
 from jackdaw.UI.ControlPanel import ControlPanel
@@ -43,51 +44,58 @@ def test_open_many_midi_editors():
 
 def test_create_playlist_clips():
     with UiTestSession():
-        pl = Playlist.open()
         for i in range(100):
-            pl.data.add(PlaylistClipData(i, i, i % 16))
+            clip = PlaylistClipData()
+            clip.beat.value = i % 16
+            clip.track.value = i
+            data.playlist_clips.add(clip)
+
+        Playlist.open()
 
 
 def test_create_midi_clip():
     with UiTestSession():
-        pl = Playlist.open()
-        pl.data.add(PlaylistClipData(1, 0, 0))
-        me = MidiEditor.open(1)
 
         beat = 0
         for octave in range(0, MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
 
-                me.clip.add(MidiNoteData(f"{note}{octave}", beat))
+                note_data = MidiNoteData()
+                note_data.note.value = f"{note}{octave}"
+                note_data.beat.value = beat
+                data.midi_clips[1].notes.add(note_data)
 
                 beat += 0.25
                 if beat > 8:
                     beat -= 8
 
-        try:
-            me.clip.add(MidiNoteData("C50", 0))
-        except MidiEditor.NoteOutOfRangeException as e:
-            assert True
+        clip = PlaylistClipData()
+        clip.clip.value = 1
+        clip.type.value = "MIDI"
+        data.playlist_clips.add(clip)
+
+        Playlist.open()
+        MidiEditor.open(1)
 
 
 def test_create_unique_clip():
     with UiTestSession():
+
+        for i in range(2):
+            clip = PlaylistClipData()
+            clip.clip.value = 1
+            clip.beat.value = i * 4
+            data.playlist_clips.add(clip)
+
+        MidiEditor.open(1)
+
         pl = Playlist.open()
-        pl.data.add(PlaylistClipData(1, 0, 0))
-        pl.data.add(PlaylistClipData(1, 0, 4))
-        me = MidiEditor.open(1)
-        me.clip.add(MidiNoteData("C3", 0))
-
-        # There should be just one clip on disk
-        assert len(list(MidiClipData.clips_on_disk())) == 1
-
         for c in pl.ui_clips:
-            if c.clip.beat > 2:
+            if c.clip.beat.value > 2:
                 c.make_unique()
 
-        # There should now be two clips in the UI/on disk
-        assert len({c.clip.clip_number for c in pl.ui_clips}) == 2
-        assert len(list(MidiClipData.clips_on_disk())) == 2
+        # There should now be two unique clips in the UI
+        assert len({c.clip.clip.value for c in pl.ui_clips}) == 2
 
 
 def test_create_unique_clip_no_midi():

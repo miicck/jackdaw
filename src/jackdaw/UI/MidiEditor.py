@@ -6,20 +6,23 @@ from jackdaw.UI.Drawing import draw_background_grid
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Session import session_close_method
 from jackdaw import MusicTheory
-from jackdaw.Data.MidiNoteData import MidiNoteData
-from jackdaw.Data.MidiClipData import MidiClipData
 from jackdaw.Data import data
+from jackdaw.Data.ProjectData import MidiNoteData
 from jackdaw.RuntimeChecks import must_be_called_from
 
 
 class MidiEditor(Gtk.Window):
 
+    @property
+    def clip(self):
+        return data.midi_clips[self._clip_number]
+
     def __init__(self, clip_number: int):
         must_be_called_from(MidiEditor.open)
         super().__init__(title=f"Midi Editor (clip {clip_number})")
 
-        self.clip = data.midi_clip(clip_number)
-        self.clip.add_change_listener(self.on_clip_change)
+        self._clip_number = clip_number
+        self.clip.notes.add_on_change_listener(self.on_notes_change)
 
         self.key_height = 16  # The height in px of a keyboard key
 
@@ -80,10 +83,10 @@ class MidiEditor(Gtk.Window):
             # Find the last beat when a clip
             # that matches this one was started.
             last_started_clip_beat = -1.0  # -1 => no clips found
-            for clip in data.playlist.clips:
-                if clip.clip_number == self.clip.clip_number:
-                    if last_started_clip_beat < clip.beat <= beat_time:
-                        last_started_clip_beat = clip.beat
+            for clip in data.playlist_clips:
+                if data.midi_clips[clip.clip.value] == self.clip:
+                    if last_started_clip_beat < clip.beat.value <= beat_time:
+                        last_started_clip_beat = clip.beat.value
 
             if last_started_clip_beat < 0:
                 beat_time = 0
@@ -100,11 +103,11 @@ class MidiEditor(Gtk.Window):
         position_playhead(TimeControl.get_time())
 
         self.show_all()
-        self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self.clip.clip_number))
+        self.connect("destroy", lambda e: MidiEditor.open_editors.pop(self._clip_number))
         self.connect("key-press-event", self.on_keypress)
 
         # Invoke clip change to load clip data
-        self.on_clip_change(self.clip)
+        self.on_notes_change()
 
     def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
         height = area.get_allocated_height()
@@ -118,7 +121,10 @@ class MidiEditor(Gtk.Window):
         # Snap to nearest sub-beat
         beat = (int(button.x) // self.sub_beat_width) / 4.0
 
-        self.clip.add(MidiNoteData(note, beat))
+        new_note = MidiNoteData()
+        new_note.note.value = note
+        new_note.beat.value = beat
+        self.clip.notes.add(new_note)
 
     ###################
     # EVENT CALLBACKS #
@@ -134,7 +140,7 @@ class MidiEditor(Gtk.Window):
         if key.keyval == Gdk.KEY_space:
             TimeControl.toggle_play_stop()
 
-    def on_clip_change(self, clip: MidiClipData):
+    def on_notes_change(self):
 
         # Destroy all the old midi notes in the UI
         for c in self.notes_area.get_children():
@@ -142,21 +148,21 @@ class MidiEditor(Gtk.Window):
                 c.destroy()
 
         # Create all the new midi notes in the UI
-        for note in clip.notes:
+        for note in self.clip.notes:
 
-            if note.note not in self.key_indicies:
-                raise MidiEditor.NoteOutOfRangeException(f"Note: {note.note}")
+            if note.note.value not in self.key_indicies:
+                raise MidiEditor.NoteOutOfRangeException(f"Note: {note.note.value}")
 
             # Get the y position of the given note
             height = self.notes_area.get_allocated_height()
-            index = self.key_indicies[note.note]
+            index = self.key_indicies[note.note.value]
             y = height - (index + 1) * self.key_height
 
             # Create the note UI
-            note_ui = MidiNote(note)
+            note_ui = MidiNote()
             note_ui.set_size_request(self.beat_width, self.key_height)
-            self.notes_area.put(note_ui, self.beat_width * note.beat, y)
-            note_ui.add_delete_note_listener(lambda n: clip.remove(n.note))
+            self.notes_area.put(note_ui, self.beat_width * note.beat.value, y)
+            note_ui.add_delete_note_listener(lambda note=note: self.clip.notes.remove(note))
 
         self.notes_area.show_all()
 
@@ -259,7 +265,7 @@ class MidiEditor(Gtk.Window):
             editor = MidiEditor(clip_number)
             MidiEditor.open_editors[clip_number] = editor
 
-        assert editor.clip.clip_number == clip_number
+        assert data.midi_clips[clip_number] == editor.clip
         editor.present()
         return editor
 

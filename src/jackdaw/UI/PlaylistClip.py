@@ -3,8 +3,7 @@ from typing import Callable
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.UI.Colors import Colors
-from jackdaw.Data.PlaylistClipData import PlaylistClipData
-from jackdaw.Data.MidiClipData import MidiClipData
+from jackdaw.Data.ProjectData import PlaylistClipData
 from jackdaw.Data import data
 from jackdaw.TimeControl import TimeControl
 import jackdaw.UI.Playlist as PlaylistModule  # Imported this way to avoid circular imports
@@ -31,13 +30,13 @@ class PlaylistClip(Gtk.DrawingArea):
         if button.button == Gdk.BUTTON_PRIMARY:
             # Open midi editor on double left click
             if button.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
-                MidiEditor.open(self.clip.clip_number)
+                MidiEditor.open(self.clip.clip.value)
 
             # Set the playhead to the start of this clip
-            TimeControl.set_playhead_time(TimeControl.beats_to_time(self.clip.beat))
+            TimeControl.set_playhead_time(TimeControl.beats_to_time(self.clip.beat.value))
 
             # Set the clip number we're pasting to this clip
-            PlaylistModule.Playlist.paste_clip_number = self.clip.clip_number
+            PlaylistModule.Playlist.paste_clip_number = self.clip.clip.value
             return
 
         if button.button == Gdk.BUTTON_SECONDARY:
@@ -53,7 +52,7 @@ class PlaylistClip(Gtk.DrawingArea):
     def make_unique(self):
 
         # Get a unique clip number
-        numbers = set(MidiClipData.clips_on_disk())
+        numbers = set(data.midi_clips)
         if len(numbers) > 0:
             unique_number = max(numbers) + 1
             for i in range(1, unique_number + 1):
@@ -64,21 +63,22 @@ class PlaylistClip(Gtk.DrawingArea):
             unique_number = 1
 
         # Copy MIDI data from this clip
-        midi = MidiClipData.get(unique_number)
-        old_midi = MidiClipData.get(self.clip.clip_number)
+        midi = data.midi_clips[unique_number]
+        old_midi = data.midi_clips[self.clip.clip]
         for note in old_midi.notes:
             midi.add(note.copy())
 
         # Create the new clip
-        new_data = PlaylistClipData(unique_number, self.clip.track, self.clip.beat)
-        data.playlist.add(new_data)
+        new_clip = self.clip.copy()
+        new_clip.clip = unique_number
+        data.playlist_clips.add(new_clip)
 
         # Delete me
         self.delete()
 
     def delete(self):
         for c in self._delete_clip_callbacks:
-            c(self)
+            c()
         self.destroy()
 
     def draw_clip(self, area: Gtk.DrawingArea, context: cairo.Context):
@@ -95,10 +95,9 @@ class PlaylistClip(Gtk.DrawingArea):
         context.set_font_size(font_size)
         context.set_source_rgb(0.0, 0.0, 0.0)
         context.move_to(1, font_size)
-        context.show_text(f"{self.clip.clip_number}")
+        context.show_text(f"{self.clip.clip.value}")
 
-    def add_delete_clip_listener(
-            self, callback: Callable[['PlaylistClip'], None]):
+    def add_delete_clip_listener(self, callback: Callable[[], None]):
         self._delete_clip_callbacks.append(callback)
 
     def draw_midi_preview(self, area: Gtk.DrawingArea, context: cairo.Context):
@@ -109,8 +108,8 @@ class PlaylistClip(Gtk.DrawingArea):
 
         # Read the notes from the file
         notes = []
-        for note in data.midi_clip(self.clip.clip_number).notes:
-            notes.append((MidiEditor.note_name_to_index(note.note), note.beat))
+        for note in data.midi_clips[self.clip.clip.value].notes:
+            notes.append((MidiEditor.note_name_to_index(note.note.value), note.beat.value))
 
         # No notes to draw
         if len(notes) == 0:
