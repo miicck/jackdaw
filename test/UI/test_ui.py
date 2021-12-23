@@ -3,7 +3,6 @@ from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.Data import data
 from jackdaw.Data.ProjectData import MidiNoteData
-from jackdaw.Data.ProjectData import MidiClipData
 from jackdaw.Data.ProjectData import PlaylistClipData
 from jackdaw import MusicTheory
 from jackdaw.Gi import add_timeout

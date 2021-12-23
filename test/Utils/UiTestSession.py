@@ -1,8 +1,9 @@
 import time
 from jackdaw.Gi import Gtk, add_timeout
 from jackdaw.TimeControl import TimeControl
-from jackdaw.Session import call_session_close_methods
 from jackdaw.Main import start_main_loop
+from jackdaw.Data.ProjectData import ProjectData
+import os
 
 
 class UiTestSession:
@@ -13,20 +14,15 @@ class UiTestSession:
         self.save_project = save_project
 
         TimeControl.play()
-
-        def stop_session():
-            call_session_close_methods()
-            Gtk.main_quit()
-
-        add_timeout(stop_session, main_loop_ms)
+        add_timeout(Gtk.main_quit, main_loop_ms)
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         start_main_loop()
-        TimeControl.stop()
         time.sleep(self.pause_after_ms / 1000.0)
 
         if not self.save_project:
-            print("TODO: delete project data here")
+            if os.path.isfile(ProjectData.FILENAME):
+                os.remove(ProjectData.FILENAME)

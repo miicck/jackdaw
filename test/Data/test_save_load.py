@@ -1,5 +1,4 @@
 from ..Utils.UiTestSession import UiTestSession
-from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.UI.Router import Router
 from jackdaw.Data import data

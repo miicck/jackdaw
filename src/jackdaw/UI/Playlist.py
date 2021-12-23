@@ -71,7 +71,7 @@ class Playlist(Gtk.Window):
         new_clip = PlaylistClipData()
         new_clip.clip.value = Playlist.paste_clip_number
         new_clip.track.value = track
-        new_clip.beat.value = float(beat)
+        new_clip.beat.value = beat
 
         data.playlist_clips.add(new_clip)
 

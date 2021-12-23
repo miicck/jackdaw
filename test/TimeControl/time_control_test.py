@@ -8,7 +8,7 @@ def test_time_toggle_play_pause():
         def step():
             TimeControl.toggle_play_pause()
             beat_time = TimeControl.get_time_as_beats()
-            assert TimeControl.beats_to_time(beat_time) == TimeControl.get_time()
+            assert abs(TimeControl.beats_to_time(beat_time) - TimeControl.get_time()) < 10e-5
 
         add_timeout(step, ts.main_loop_ms // 4, repeats=3)
 

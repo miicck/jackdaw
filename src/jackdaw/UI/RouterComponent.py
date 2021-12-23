@@ -22,7 +22,6 @@ class RouterComponent(Gtk.Grid):
         self.header_bar.connect("draw", self.on_draw_header)
         self.header_bar.connect("button-press-event", self.on_click_header)
         self.header_bar.connect("motion-notify-event", self.on_drag_header)
-        self.header_bar.connect("button-release-event", self.on_unclick_header)
         self.drag_start = [0, 0]
         self.attach(self.header_bar, 1, -1, 1, 1)
 
@@ -65,9 +64,6 @@ class RouterComponent(Gtk.Grid):
         if button.button == Gdk.BUTTON_SECONDARY:
             data.router_components.remove(self.data)
             return
-
-    def on_unclick_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
-        print("TODO: Save new position here!")
 
     def on_drag_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
         parent: Gtk.Fixed = self.get_parent()

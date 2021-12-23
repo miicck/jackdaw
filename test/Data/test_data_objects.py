@@ -44,7 +44,7 @@ def test_serialize_deserialize():
 def test_serialize_deserialize_json():
     d = get_example()
     d2 = TopLevel()
-    d2.deserialize_json(d.pretty_json())
+    d2.deserialize_from_json_str(d.get_pretty_json_string())
     assert d2.serialize() == d.serialize()
 
 

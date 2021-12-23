@@ -25,8 +25,12 @@ class DataObject(ABC):
         Only serializes state held in DataOBjects.
         :return: Dictionary serialization of this object.
         """
-        attrs = {n: getattr(self, n) for n in dir(self)}
-        return {n: attrs[n].serialize() for n in attrs if isinstance(attrs[n], DataObject)}
+        data = dict()
+        for attr_name in dir(self):
+            attr = getattr(self, attr_name)
+            if isinstance(attr, DataObject) and attr is not self:
+                data[attr_name] = attr.serialize()
+        return data
 
     def deserialize(self, data: dict) -> None:
         """
@@ -52,11 +56,17 @@ class DataObject(ABC):
         copy.deserialize(self.serialize())
         return copy
 
-    def pretty_json(self):
+    def get_pretty_json_string(self):
         return json.dumps(self.serialize(), indent=2)
 
-    def deserialize_json(self, json_data: str):
+    def write_pretty_json_file(self, f):
+        json.dump(self.serialize(), f, indent=2)
+
+    def deserialize_from_json_str(self, json_data: str):
         self.deserialize(json.loads(json_data))
+
+    def deserialize_from_json_file(self, f):
+        self.deserialize(json.load(f))
 
 
 KeyType = TypeVar("KeyType")
@@ -94,6 +104,9 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
         :param key: The dictionary key.
         :return: The data object stored at that key (or a new data object if not present).
         """
+        if not isinstance(key, self._key_type):
+            raise Exception(f"Tried to use a key of the wrong type expected "
+                            f"{self._key_type.__name__}, got {key.__class__.__name__}.")
         return self._data[key]
 
     def __iter__(self):

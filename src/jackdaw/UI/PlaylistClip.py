@@ -64,7 +64,7 @@ class PlaylistClip(Gtk.DrawingArea):
 
         # Copy MIDI data from this clip
         midi = data.midi_clips[unique_number]
-        old_midi = data.midi_clips[self.clip.clip]
+        old_midi = data.midi_clips[self.clip.clip.value]
         for note in old_midi.notes:
             midi.add(note.copy())
 
