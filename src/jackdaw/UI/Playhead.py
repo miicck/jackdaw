@@ -2,6 +2,7 @@ import cairo
 from typing import Callable
 from jackdaw.Gi import Gtk
 from jackdaw.TimeControl import TimeControl
+from jackdaw.Session import session_close_method
 
 
 class Playhead(Gtk.DrawingArea):
@@ -29,3 +30,8 @@ class Playhead(Gtk.DrawingArea):
     ################
 
     playheads = set()
+
+    @staticmethod
+    @session_close_method
+    def forget_playheads():
+        Playhead.playheads = set()

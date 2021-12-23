@@ -153,8 +153,27 @@ def test_open_close_router():
 
 
 def test_router_add_track_signals():
-    with UiTestSession(main_loop_ms=400):
+    with UiTestSession():
         rt = Router.instance()
         for x in range(1, 4):
             for y in range(1, 4):
                 rt.add_track_signal(x * 100, y * 100)
+
+
+def test_playlist_colors():
+    assert not Playlist.instance_exists()
+
+    with UiTestSession(main_loop_ms=500):
+
+        for beat in range(10):
+            beat = beat * 4
+
+            for track in range(15):
+                plc = PlaylistClipData()
+                plc.track.value = track
+                plc.clip.value = track
+                plc.beat.value = beat
+
+                data.playlist_clips.add(plc)
+
+        Playlist.instance()

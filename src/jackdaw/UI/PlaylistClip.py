@@ -84,7 +84,7 @@ class PlaylistClip(Gtk.DrawingArea):
         width = area.get_allocated_width()
         height = area.get_allocated_height()
 
-        context.set_source_rgba(*Colors.playlist_clip)
+        context.set_source_rgba(*Colors.playlist_clip_colors(self.clip.clip.value))
         context.rectangle(1, 1, width - 2, height - 2)
         context.fill()
 
