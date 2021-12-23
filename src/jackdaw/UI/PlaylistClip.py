@@ -70,7 +70,7 @@ class PlaylistClip(Gtk.DrawingArea):
 
         # Create the new clip
         new_clip = self.clip.copy()
-        new_clip.clip = unique_number
+        new_clip.clip.value = unique_number
         data.playlist_clips.add(new_clip)
 
         # Delete me

@@ -8,7 +8,7 @@ import os
 
 class UiTestSession:
 
-    def __init__(self, main_loop_ms=50, pause_after_ms=20, save_project=False):
+    def __init__(self, main_loop_ms=200, pause_after_ms=100, save_project=False):
         self.main_loop_ms = main_loop_ms
         self.pause_after_ms = pause_after_ms
         self.save_project = save_project

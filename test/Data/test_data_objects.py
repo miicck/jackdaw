@@ -27,11 +27,31 @@ class TopLevel(DataObject):
 
 def get_example():
     data = TopLevel()
-
     data.dict[0].dict[0].field_1.value = "Modified string"
     assert data.dict[2] is not None
-
     return data
+
+
+def test_type_change_exception():
+    try:
+        # Should throw, setting field rather than field.value
+        data_obj = ThirdLevel()
+        data_obj.field_1 = 1.0
+        assert False
+    except TypeChangeException:
+        pass
+
+    try:
+        # Should trow, trying to cast float -> int
+        data_obj = ThirdLevel()
+        data_obj.field_2.value = 1.1
+        assert False
+    except TypeChangeException:
+        pass
+
+    # Should not throw because casting int -> float
+    data_obj = ThirdLevel()
+    data_obj.field_3.value = 1
 
 
 def test_serialize_deserialize():

@@ -7,14 +7,32 @@ import json
 class HasOnChangeListeners:
 
     def __init__(self):
+        """
+        A class that allows the adding and
+        calling of "on change" listeners.
+        """
         self._on_change_listeners = []
 
     def add_on_change_listener(self, listener: Callable[[], None]) -> None:
+        """
+        Add a listener to be invoked on a change.
+        :param listener: The listener to call just after a change happens.
+        :return: None
+        """
         self._on_change_listeners.append(listener)
 
-    def invoke_on_change_listeners(self):
+    def invoke_on_change_listeners(self) -> None:
+        """
+        Call all of the currently-registered
+        "on change" listeners.
+        :return: None
+        """
         for listener in self._on_change_listeners:
             listener()
+
+
+class TypeChangeException(Exception):
+    pass
 
 
 class DataObject(ABC):
@@ -42,14 +60,32 @@ class DataObject(ABC):
             getattr(self, attr_name).deserialize(data[attr_name])
 
     def __setattr__(self, key, value):
-        if hasattr(self, key) and not isinstance(value, getattr(self, key).__class__):
-            try:
-                value = getattr(self, key).__class__(value)
-            except:
-                raise Exception("Tried to change attribute type from "
-                                f"{getattr(self, key).__class__.__name__} to "
-                                f"{value.__class__.__name__}")
+
+        if hasattr(self, key):
+
+            # Work out the kind of attribute we are trying to set
+            attr_class = getattr(self, key).__class__
+
+            # Check if the value is of the wrong type
+            if not isinstance(value, attr_class):
+                if not DataObject.allowed_cast(value.__class__, attr_class):
+                    raise TypeChangeException(
+                        "Tried to set attribute of type "
+                        f"'{attr_class.__name__}' to a value of type "
+                        f"'{value.__class__.__name__}'")
+
+            # Cast the value to the correct type (e.g int -> float)
+            value = attr_class(value)
+
         super().__setattr__(key, value)
+
+    @staticmethod
+    def allowed_cast(type_from: Type, type_to: Type):
+        if type_from is int and type_to is float:
+            return True
+        if type_from is list and type_to is tuple:
+            return True
+        return False
 
     def copy(self):
         copy = self.__class__()
