@@ -1,16 +1,15 @@
-from jackdaw.Gi import Gtk, Gdk, GLib
+from jackdaw.Gi import Gtk
 from jackdaw.UI.Router import Router
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.TimeControl import TimeControl
-from jackdaw.RuntimeChecks import must_be_called_from
-from jackdaw.Session import session_close_method
+from jackdaw.Utils.Singleton import Singleton
 
 
-class ControlPanel(Gtk.Window):
+class ControlPanel(Gtk.Window, Singleton):
 
     def __init__(self):
-        super().__init__(title="Control panel")
-        must_be_called_from(ControlPanel.open)
+        Singleton.__init__(self)
+        Gtk.Window.__init__(self, title="Control panel")
 
         self.connect("destroy", Gtk.main_quit)
 
@@ -42,22 +41,3 @@ class ControlPanel(Gtk.Window):
         buttons.add(playlist_button)
 
         self.show_all()
-
-    ################
-    # STATIC STUFF #
-    ################
-
-    _open_control_panel = None
-
-    @staticmethod
-    def open():
-        if ControlPanel._open_control_panel is None:
-            ControlPanel._open_control_panel = ControlPanel()
-        return ControlPanel._open_control_panel
-
-    @staticmethod
-    @session_close_method
-    def close():
-        if ControlPanel._open_control_panel is not None:
-            ControlPanel._open_control_panel.destroy()
-        ControlPanel._open_control_panel = None

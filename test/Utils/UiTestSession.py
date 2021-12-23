@@ -1,8 +1,9 @@
 import time
-from jackdaw.Gi import Gtk, add_timeout
+from jackdaw.Gi import add_timeout
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Main import start_main_loop
 from jackdaw.Data.ProjectData import ProjectData
+from jackdaw.UI.ControlPanel import ControlPanel
 import os
 
 
@@ -14,7 +15,7 @@ class UiTestSession:
         self.save_project = save_project
 
         TimeControl.play()
-        add_timeout(Gtk.main_quit, main_loop_ms)
+        add_timeout(lambda: ControlPanel.instance().destroy(), main_loop_ms)
 
     def __enter__(self):
         return self

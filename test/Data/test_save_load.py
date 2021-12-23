@@ -1,3 +1,4 @@
+import jackdaw.Data.ProjectData
 from ..Utils.UiTestSession import UiTestSession
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.UI.Router import Router

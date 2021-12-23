@@ -12,7 +12,7 @@ from jackdaw.UI.ControlPanel import ControlPanel
 
 def test_control_panel():
     with UiTestSession():
-        ControlPanel.open()
+        ControlPanel.instance()
 
 
 def test_open_playlist():

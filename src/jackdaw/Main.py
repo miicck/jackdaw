@@ -5,7 +5,7 @@ from jackdaw.Session import call_session_close_methods
 
 
 def start_main_loop():
-    ControlPanel.open()
+    ControlPanel.instance()
     add_timeout(TimeControl.update, 16, repeats=0)
     Gtk.main()
     call_session_close_methods()
