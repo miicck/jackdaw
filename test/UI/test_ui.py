@@ -87,6 +87,9 @@ def test_create_unique_clip():
             clip.beat.value = i * 4
             data.playlist_clips.add(clip)
 
+        # This will create a midi clip
+        # which will cause make_unique to
+        # actually make a new clip
         MidiEditor.open(1)
 
         pl = Playlist.open()
@@ -100,22 +103,22 @@ def test_create_unique_clip():
 
 def test_create_unique_clip_no_midi():
     with UiTestSession():
+
+        for i in range(2):
+            clip = PlaylistClipData()
+            clip.clip.value = 1
+            clip.beat.value = i * 4
+            data.playlist_clips.add(clip)
+
         pl = Playlist.open()
-        pl.data.add(PlaylistClipData(1, 0, 0))
-        pl.data.add(PlaylistClipData(1, 0, 4))
-
-        # No midi files should have been created yet
-        assert len(list(MidiClipData.clips_on_disk())) == 0
-
         for c in pl.ui_clips:
-            if c.clip.beat > 2:
+            if c.clip.beat.value > 2:
                 c.make_unique()
 
         # Because no midi clips existed, make_unique shouldn't do anything
         # => there should only be one unique clip in the playlist
         # and no midi should have been created on disk
-        assert len({c.clip.clip_number for c in pl.ui_clips}) == 1
-        assert len(list(MidiClipData.clips_on_disk())) == 0
+        assert len({c.clip.clip.value for c in pl.ui_clips}) == 1
 
 
 def test_open_close_router():
