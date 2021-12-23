@@ -122,16 +122,16 @@ def test_create_unique_clip_no_midi():
 
 def test_open_close_router():
     with UiTestSession() as ts:
-        Router.open()
+        Router.instance()
         qt = ts.main_loop_ms // 4
-        add_timeout(Router.close, qt)
-        add_timeout(Router.open, qt * 2)
-        add_timeout(Router.close, qt * 3)
+        add_timeout(Router.clear_instance, qt)
+        add_timeout(Router.instance, qt * 2)
+        add_timeout(Router.clear_instance, qt * 3)
 
 
 def test_router_add_track_signals():
     with UiTestSession(main_loop_ms=400):
-        rt = Router.open()
+        rt = Router.instance()
         for x in range(1, 4):
             for y in range(1, 4):
                 rt.add_track_signal(x * 100, y * 100)

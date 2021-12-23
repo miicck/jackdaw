@@ -6,15 +6,16 @@ from jackdaw.UI.Colors import Colors
 from jackdaw.Data import data
 from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
+from jackdaw.Utils.Singleton import Singleton
 
 # This is needed so we can enumerate RouterComponent subclasses
 import jackdaw.UI.RouterComponents
 
 
-class Router(Gtk.Window):
+class Router(Gtk.Window, Singleton):
 
     def __init__(self):
-        must_be_called_from(Router.open)
+        must_be_called_from(Router.instance)
         super().__init__(title="Router")
 
         self.set_default_size(800, 800)
@@ -34,9 +35,12 @@ class Router(Gtk.Window):
         background.connect("button-press-event", self.on_click_background)
         self.surface.add(background)
 
-        self.connect("destroy", lambda e: Router.close())
+        self.connect("destroy", lambda e: Router.clear_instance())
         self.on_data_change()
         self.show_all()
+
+    def on_clear_singleton_instance(self):
+        self.destroy()
 
     def on_data_change(self):
 
@@ -98,24 +102,3 @@ class Router(Gtk.Window):
                 menu.attach(entry, 0, 1, i, i + 1)
             menu.show_all()
             menu.popup(None, None, None, None, button.button, button.time)
-
-    ################
-    # STATIC STUFF #
-    ################
-
-    _open_router: 'Router' = None
-
-    @staticmethod
-    def open():
-        if Router._open_router is None:
-            Router._open_router = Router()
-        Router._open_router.present()
-        return Router._open_router
-
-    @staticmethod
-    @session_close_method
-    def close():
-        if Router._open_router is None:
-            return
-        Router._open_router.destroy()
-        Router._open_router = None

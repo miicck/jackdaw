@@ -120,7 +120,7 @@ def test_save_midi_clip_with_delete():
 
 def test_save_router():
     with UiTestSession(save_project=True):
-        r = Router.open()
+        r = Router.instance()
         r.add_track_signal(100, 100)
         assert len(data.router_components) == 1
 

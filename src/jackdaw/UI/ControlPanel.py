@@ -37,7 +37,7 @@ class ControlPanel(Gtk.Window, Singleton):
         buttons.add(playlist_button)
 
         playlist_button = Gtk.Button(label="Show router")
-        playlist_button.connect("clicked", lambda e: Router.open())
+        playlist_button.connect("clicked", lambda e: Router.instance())
         buttons.add(playlist_button)
 
         self.show_all()
