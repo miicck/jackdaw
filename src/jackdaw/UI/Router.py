@@ -1,5 +1,4 @@
 import cairo
-from jackdaw.Session import session_close_method
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.RuntimeChecks import must_be_called_from
 from jackdaw.UI.Colors import Colors
