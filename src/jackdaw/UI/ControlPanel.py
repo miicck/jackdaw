@@ -33,7 +33,7 @@ class ControlPanel(Gtk.Window, Singleton):
         buttons.add(Gtk.Label(label="\nWindows\n"))
 
         playlist_button = Gtk.Button(label="Show playlist")
-        playlist_button.connect("clicked", lambda e: Playlist.open())
+        playlist_button.connect("clicked", lambda e: Playlist.instance())
         buttons.add(playlist_button)
 
         playlist_button = Gtk.Button(label="Show router")

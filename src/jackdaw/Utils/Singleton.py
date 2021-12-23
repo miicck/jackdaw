@@ -35,7 +35,8 @@ class Singleton:
 
     @classmethod
     def clear_instance(cls):
-        cls.instance().on_clear_singleton_instance()
+        if cls.instance_exists():
+            cls.instance().on_clear_singleton_instance()
         setattr(cls, Singleton.SINGLETON_INSTANCE_NAME, None)
 
     @classmethod

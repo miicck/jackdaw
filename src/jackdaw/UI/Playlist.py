@@ -4,19 +4,18 @@ from jackdaw.UI.PlaylistClip import PlaylistClip
 from jackdaw.UI.Playhead import Playhead
 from jackdaw.UI.Drawing import draw_background_grid
 from jackdaw.TimeControl import TimeControl
-from jackdaw.Session import session_close_method
 from jackdaw.Data import data
 from jackdaw.Data.ProjectData import PlaylistClipData
-from jackdaw.RuntimeChecks import must_be_called_from
+from jackdaw.Utils.Singleton import Singleton
 
 
-class Playlist(Gtk.Window):
+class Playlist(Gtk.Window, Singleton):
 
     def __init__(self):
-        must_be_called_from(Playlist.open)
-        super().__init__(title="Playlist")
-        self.set_default_size(800, 800)
+        Singleton.__init__(self)
+        Gtk.Window.__init__(self, title="Playlist")
 
+        self.set_default_size(800, 800)
         data.playlist_clips.add_on_change_listener(self.on_data_change)
 
         self.track_height = 64
@@ -29,12 +28,15 @@ class Playlist(Gtk.Window):
         self.setup_background()
         self.setup_playhead()
 
-        self.connect("destroy", lambda e: Playlist.close())
+        self.connect("destroy", lambda e: Playlist.clear_instance())
         self.connect("key-press-event", self.on_keypress)
 
         # Load initial data + show
         self.on_data_change()
         self.show_all()
+
+    def on_clear_singleton_instance(self):
+        self.destroy()
 
     def setup_clips_area(self):
         scroll_area = Gtk.ScrolledWindow()
@@ -140,19 +142,3 @@ class Playlist(Gtk.Window):
     ################
 
     paste_clip_number = 1
-    _open_playlist: 'Playlist' = None
-
-    @staticmethod
-    def open():
-        if Playlist._open_playlist is None:
-            Playlist._open_playlist = Playlist()
-        Playlist._open_playlist.present()
-        return Playlist._open_playlist
-
-    @staticmethod
-    @session_close_method
-    def close():
-        if Playlist._open_playlist is None:
-            return
-        Playlist._open_playlist.destroy()
-        Playlist._open_playlist = None

@@ -17,7 +17,7 @@ def test_control_panel():
 
 def test_open_playlist():
     with UiTestSession():
-        assert Playlist.open() is not None
+        assert Playlist.instance() is not None
 
 
 def test_open_midi_editor():
@@ -49,7 +49,7 @@ def test_create_playlist_clips():
             clip.track.value = i
             data.playlist_clips.add(clip)
 
-        Playlist.open()
+        Playlist.instance()
 
 
 def test_create_midi_clip():
@@ -73,7 +73,7 @@ def test_create_midi_clip():
         clip.type.value = "MIDI"
         data.playlist_clips.add(clip)
 
-        Playlist.open()
+        Playlist.instance()
         MidiEditor.open(1)
 
 
@@ -91,7 +91,7 @@ def test_create_unique_clip():
         # actually make a new clip
         MidiEditor.open(1)
 
-        pl = Playlist.open()
+        pl = Playlist.instance()
         for c in pl.ui_clips:
             if c.clip.beat.value > 2:
                 c.make_unique()
@@ -109,7 +109,7 @@ def test_create_unique_clip_no_midi():
             clip.beat.value = i * 4
             data.playlist_clips.add(clip)
 
-        pl = Playlist.open()
+        pl = Playlist.instance()
         for c in pl.ui_clips:
             if c.clip.beat.value > 2:
                 c.make_unique()
