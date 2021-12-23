@@ -83,7 +83,9 @@ class LineSerializableCollection(ABC, Generic[T]):
         :return: None
         """
         if data_obj not in self._data:
-            raise Exception("Data object to remove not found in collection!")
+            raise Exception("Data object to remove not found in collection!\n"
+                            f"Object: {data_obj}\n"
+                            f"Collection: {self}")
         self._data.remove(data_obj)
         self.on_change()
 

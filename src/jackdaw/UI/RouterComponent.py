@@ -64,7 +64,6 @@ class RouterComponent(Gtk.Grid):
 
         if button.button == Gdk.BUTTON_SECONDARY:
             RouterData.get().remove(self.data)
-            self.destroy()
             return
 
     def on_unclick_header(self, widget: Gtk.Widget, button: Gdk.EventButton):

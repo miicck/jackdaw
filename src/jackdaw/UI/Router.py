@@ -40,6 +40,11 @@ class Router(Gtk.Window):
 
     def on_data_change(self, data: RouterData):
 
+        # Remove old components
+        for c in self.surface.get_children():
+            if isinstance(c, RouterComponent):
+                c.destroy()
+
         # Get all component types
         component_types = dict()
         for c in RouterComponent.__subclasses__():
