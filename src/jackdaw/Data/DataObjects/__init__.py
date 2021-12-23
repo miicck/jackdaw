@@ -180,8 +180,9 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
         :return: The data object stored at that key (or a new data object if not present).
         """
         if not isinstance(key, self._key_type):
-            raise Exception(f"Tried to use a key of the wrong type expected "
-                            f"{self._key_type.__name__}, got {key.__class__.__name__}.")
+            raise TypeMismatchException(
+                f"Tried to use a key of the wrong type expected "
+                f"{self._key_type.__name__}, got {key.__class__.__name__}.")
         return self._data[key]
 
     def __iter__(self):
@@ -240,6 +241,9 @@ class DataObjectSet(DataObject, Generic[ValType], HasOnChangeListeners):
 
     def __iter__(self):
         return self._data.__iter__()
+
+    def __contains__(self, item):
+        return item in self._data
 
     def __len__(self):
         return len(self._data)

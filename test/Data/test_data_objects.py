@@ -23,13 +23,45 @@ class TopLevel(DataObject):
     def __init__(self):
         self.field_1 = SecondLevel()
         self.dict = DataObjectDict(int, SecondLevel)
+        self.list = DataObjectList(SecondLevel)
+        self.set = DataObjectSet(SecondLevel)
 
 
 def get_example():
     data = TopLevel()
+
     data.dict[0].dict[0].field_1.value = "Modified string"
+    assert data.dict[0].dict[0].field_1.value == "Modified string"
+
+    in_list = SecondLevel()
+    data.list.append(in_list)
+    assert in_list in data.list
+    assert data.list[0] == in_list
+
+    in_set = SecondLevel()
+    data.set.add(in_set)
+    assert in_set in data.set
+
+    not_in_set = SecondLevel()
+    data.set.add(not_in_set)
+    data.set.remove(not_in_set)
+    assert not_in_set not in data.set
+
     assert data.dict[2] is not None
     return data
+
+
+def test_get_example():
+    assert get_example() is not None
+
+
+def test_dict_key_type_mismatch_exception():
+    d = DataObjectDict(int, ThirdLevel)
+    try:
+        val = d[1.0]
+        assert False
+    except TypeMismatchException:
+        pass
 
 
 def test_type_change_exception():

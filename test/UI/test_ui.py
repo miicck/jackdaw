@@ -52,6 +52,14 @@ def test_create_playlist_clips():
         Playlist.instance()
 
 
+def test_playlist_paste_clip():
+    with UiTestSession():
+        pl = Playlist.instance()
+        pl.paste_clip(100, 100)
+        assert len(list(pl.ui_clips)) == 1
+        assert len(data.playlist_clips) == 1
+
+
 def test_create_midi_clip():
     with UiTestSession():
 
@@ -74,7 +82,21 @@ def test_create_midi_clip():
         data.playlist_clips.add(clip)
 
         Playlist.instance()
-        MidiEditor.open(1)
+        me = MidiEditor.open(1)
+
+        # Simulate a ui note deletion (like would happen with right-click)
+        for n in me.ui_notes:
+            n.delete()
+            break
+
+        assert len(list(me.ui_notes)) == len(data.midi_clips[1].notes)
+
+
+def test_midi_editor_paste_note():
+    with UiTestSession():
+        me = MidiEditor.open(1)
+        me.paste_note(100, 100)
+        assert len(data.midi_clips[1].notes) == 1
 
 
 def test_create_unique_clip():
@@ -89,7 +111,8 @@ def test_create_unique_clip():
         # This will create a midi clip
         # which will cause make_unique to
         # actually make a new clip
-        MidiEditor.open(1)
+        me = MidiEditor.open(1)
+        me.paste_note(100, 100)
 
         pl = Playlist.instance()
         for c in pl.ui_clips:

@@ -60,10 +60,10 @@ class Playlist(Gtk.Window, Singleton):
         self.clips_area.move(playhead, x, 0)
         self.clips_area.show_all()
 
-    def paste_clip(self, button: Gdk.EventButton):
+    def paste_clip(self, x: float, y: float):
         # Get beat/track position
-        track = int(button.y) // self.track_height
-        beat = int(button.x) // self.beat_width
+        track = int(y) // self.track_height
+        beat = int(x) // self.beat_width
 
         new_clip = PlaylistClipData()
         new_clip.clip.value = Playlist.paste_clip_number
@@ -81,7 +81,7 @@ class Playlist(Gtk.Window, Singleton):
 
     def on_background_click(self, widget: Gtk.Widget, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_PRIMARY:
-            self.paste_clip(button)
+            self.paste_clip(button.x, button.y)
 
     def on_keypress(self, widget: Gtk.Widget, key: Gdk.EventKey):
         if key.keyval == Gdk.KEY_space:

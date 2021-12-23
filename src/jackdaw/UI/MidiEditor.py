@@ -9,6 +9,7 @@ from jackdaw import MusicTheory
 from jackdaw.Data import data
 from jackdaw.Data.ProjectData import MidiNoteData
 from jackdaw.RuntimeChecks import must_be_called_from
+from typing import Iterable
 
 
 class MidiEditor(Gtk.Window):
@@ -104,17 +105,17 @@ class MidiEditor(Gtk.Window):
         self.notes_area.move(playhead, x, 0)
         self.notes_area.show_all()
 
-    def paste_note(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
-        height = area.get_allocated_height()
+    def paste_note(self, x, y):
+        height = self.notes_area.get_allocated_height()
 
         # Work out which note was clicked
-        key_index = int(height - button.y) // self.key_height
+        key_index = int(height - y) // self.key_height
         if key_index < 0 or key_index >= len(self.keys):
             return  # Invalid key
         note = self.keys[key_index]
 
         # Snap to nearest sub-beat
-        beat = (int(button.x) // self.sub_beat_width) / 4.0
+        beat = (int(x) // self.sub_beat_width) / 4.0
 
         new_note = MidiNoteData()
         new_note.note.value = note
@@ -128,7 +129,7 @@ class MidiEditor(Gtk.Window):
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
         if button.button == Gdk.BUTTON_PRIMARY:
-            self.paste_note(area, button)
+            self.paste_note(button.x, button.y)
             return
 
     def on_keypress(self, widget: Gtk.Widget, key: Gdk.EventKey):
@@ -137,12 +138,11 @@ class MidiEditor(Gtk.Window):
 
     def on_notes_change(self):
 
-        # Destroy all the old midi notes in the UI
-        for c in self.notes_area.get_children():
-            if isinstance(c, MidiNote):
-                c.destroy()
+        # Destroy the old midi notes in the UI
+        for n in self.ui_notes:
+            n.destroy()
 
-        # Create all the new midi notes in the UI
+        # Create the new midi notes in the UI
         for note in self.clip.notes:
 
             if note.note.value not in self.key_indices:
@@ -222,6 +222,12 @@ class MidiEditor(Gtk.Window):
     @property
     def clip(self):
         return data.midi_clips[self._clip_number]
+
+    @property
+    def ui_notes(self) -> Iterable[MidiNote]:
+        for c in self.notes_area.get_children():
+            if isinstance(c, MidiNote):
+                yield c
 
     @property
     def keyboard_depth(self):
