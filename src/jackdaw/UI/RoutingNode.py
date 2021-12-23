@@ -15,7 +15,7 @@ class RoutingNode(Gtk.Box):
 
         label = Gtk.Label(label=label)
 
-        packer = self.pack_start if is_output else self.pack_end
+        packer = self.pack_start if self.is_output else self.pack_end
         packer(node, False, True, 0)
         packer(label, False, True, 0)
 

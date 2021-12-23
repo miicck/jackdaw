@@ -9,8 +9,7 @@ class Singleton:
 
     def __init__(self):
 
-        if not hasattr(self.__class__, Singleton.SINGLETON_CREATION_FLAG) or \
-                not getattr(self.__class__, Singleton.SINGLETON_CREATION_FLAG):
+        if not self.__class__.instance_being_created():
             raise SingletonException(
                 "Tried to create instance of singleton, "
                 "use class.instance() instead.")
@@ -22,10 +21,8 @@ class Singleton:
     def instance(cls):
 
         # Check for existence of instance
-        if hasattr(cls, Singleton.SINGLETON_INSTANCE_NAME):
-            attr = getattr(cls, Singleton.SINGLETON_INSTANCE_NAME)
-            if attr is not None:
-                return attr
+        if cls.instance_exists():
+            return getattr(cls, Singleton.SINGLETON_INSTANCE_NAME)
 
         # Create instance
         setattr(cls, Singleton.SINGLETON_CREATION_FLAG, True)
@@ -43,6 +40,11 @@ class Singleton:
     def instance_exists(cls):
         return hasattr(cls, Singleton.SINGLETON_INSTANCE_NAME) and \
                getattr(cls, Singleton.SINGLETON_INSTANCE_NAME) is not None
+
+    @classmethod
+    def instance_being_created(cls):
+        return hasattr(cls, Singleton.SINGLETON_CREATION_FLAG) and \
+               getattr(cls, Singleton.SINGLETON_CREATION_FLAG)
 
     @staticmethod
     @session_close_method

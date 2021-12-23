@@ -35,9 +35,6 @@ class Playlist(Gtk.Window, Singleton):
         self.on_data_change()
         self.show_all()
 
-    def on_clear_singleton_instance(self):
-        self.destroy()
-
     def setup_clips_area(self):
         scroll_area = Gtk.ScrolledWindow()
         self.add(scroll_area)
@@ -53,17 +50,15 @@ class Playlist(Gtk.Window, Singleton):
         self.clips_area.add(background)
 
     def setup_playhead(self):
-        playhead = Playhead()
-
-        def position_playhead(time):
-            x = TimeControl.time_to_beats(time) * self.beat_width
-            self.clips_area.move(playhead, x, 0)
-            self.clips_area.show_all()
-
-        playhead.set_position_callback(position_playhead)
+        playhead = Playhead(position_callback=self.position_playhead)
         playhead.set_size_request(4, self.clip_area_height)
         self.clips_area.add(playhead)
-        position_playhead(TimeControl.get_time())
+        self.position_playhead(playhead, TimeControl.get_time())
+
+    def position_playhead(self, playhead, time):
+        x = TimeControl.time_to_beats(time) * self.beat_width
+        self.clips_area.move(playhead, x, 0)
+        self.clips_area.show_all()
 
     def paste_clip(self, button: Gdk.EventButton):
         # Get beat/track position
@@ -80,6 +75,9 @@ class Playlist(Gtk.Window, Singleton):
     ###################
     # EVENT CALLBACKS #
     ###################
+
+    def on_clear_singleton_instance(self):
+        self.destroy()
 
     def on_background_click(self, widget: Gtk.Widget, button: Gdk.EventButton):
         if button.button == Gdk.BUTTON_PRIMARY:

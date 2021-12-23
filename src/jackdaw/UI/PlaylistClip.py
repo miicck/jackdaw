@@ -19,11 +19,42 @@ class PlaylistClip(Gtk.DrawingArea):
         self._delete_clip_callbacks = []
 
         # Connect draw event
-        self.connect("draw", self.draw_clip)
+        self.connect("draw", self.on_draw_clip)
 
         # Connect mouse click event
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect("button-press-event", self.on_click)
+
+    def delete(self):
+        for c in self._delete_clip_callbacks:
+            c()
+        self.destroy()
+
+    def add_delete_clip_listener(self, callback: Callable[[], None]):
+        self._delete_clip_callbacks.append(callback)
+
+    def make_unique(self):
+
+        # Get a unique clip number
+        unique_number = max(set(data.midi_clips).union({0})) + 1
+
+        # Copy MIDI data from this clip
+        new_midi = data.midi_clips[unique_number]
+        old_midi = data.midi_clips[self.clip.clip.value]
+        for note in old_midi.notes:
+            new_midi.notes.add(note.copy())
+
+        # Create the new clip
+        new_clip = self.clip.copy()
+        new_clip.clip.value = unique_number
+        data.playlist_clips.add(new_clip)
+
+        # Delete me
+        self.delete()
+
+    ###################
+    # EVENT CALLBACKS #
+    ###################
 
     def on_click(self, area: Gtk.DrawingArea, button: Gdk.EventButton):
 
@@ -49,39 +80,7 @@ class PlaylistClip(Gtk.DrawingArea):
             self.make_unique()
             return
 
-    def make_unique(self):
-
-        # Get a unique clip number
-        numbers = set(data.midi_clips)
-        if len(numbers) > 0:
-            unique_number = max(numbers) + 1
-            for i in range(1, unique_number + 1):
-                if i not in numbers:
-                    unique_number = i
-                    break
-        else:
-            unique_number = 1
-
-        # Copy MIDI data from this clip
-        midi = data.midi_clips[unique_number]
-        old_midi = data.midi_clips[self.clip.clip.value]
-        for note in old_midi.notes:
-            midi.notes.add(note.copy())
-
-        # Create the new clip
-        new_clip = self.clip.copy()
-        new_clip.clip.value = unique_number
-        data.playlist_clips.add(new_clip)
-
-        # Delete me
-        self.delete()
-
-    def delete(self):
-        for c in self._delete_clip_callbacks:
-            c()
-        self.destroy()
-
-    def draw_clip(self, area: Gtk.DrawingArea, context: cairo.Context):
+    def on_draw_clip(self, area: Gtk.DrawingArea, context: cairo.Context):
         width = area.get_allocated_width()
         height = area.get_allocated_height()
 
@@ -96,9 +95,6 @@ class PlaylistClip(Gtk.DrawingArea):
         context.set_source_rgb(0.0, 0.0, 0.0)
         context.move_to(1, font_size)
         context.show_text(f"{self.clip.clip.value}")
-
-    def add_delete_clip_listener(self, callback: Callable[[], None]):
-        self._delete_clip_callbacks.append(callback)
 
     def draw_midi_preview(self, area: Gtk.DrawingArea, context: cairo.Context):
 
