@@ -4,6 +4,20 @@ from collections import defaultdict
 import json
 
 
+class TypeMismatchException(Exception):
+    """
+    Thrown when types don't match at runtime.
+    """
+    pass
+
+
+class NotSerializableError(Exception):
+    """
+    Thrown when a DataObject is given a non-serializable type.
+    """
+    pass
+
+
 class HasOnChangeListeners:
 
     def __init__(self):
@@ -31,10 +45,6 @@ class HasOnChangeListeners:
             listener()
 
 
-class TypeChangeException(Exception):
-    pass
-
-
 class DataObject(ABC):
 
     def serialize(self) -> dict:
@@ -60,37 +70,31 @@ class DataObject(ABC):
             getattr(self, attr_name).deserialize(data[attr_name])
 
     def __setattr__(self, key, value):
-
+        """
+        Perform runtime type checking/casting when setting values.
+        :param key: attribute name to set
+        :param value: value to set it to
+        :return: None
+        :raise TypeMismatchException if types are incompatible
+        """
         if hasattr(self, key):
-
-            # Work out the kind of attribute we are trying to set
-            attr_class = getattr(self, key).__class__
-
-            # Check if the value is of the wrong type
-            if not isinstance(value, attr_class):
-                if not DataObject.allowed_cast(value.__class__, attr_class):
-                    raise TypeChangeException(
-                        "Tried to set attribute of type "
-                        f"'{attr_class.__name__}' to a value of type "
-                        f"'{value.__class__.__name__}'")
-
-            # Cast the value to the correct type (e.g int -> float)
-            value = attr_class(value)
+            target_type = getattr(self, key).__class__
+            value = DataObject.try_cast(value, target_type)
 
         super().__setattr__(key, value)
 
-    @staticmethod
-    def allowed_cast(type_from: Type, type_to: Type):
-        if type_from is int and type_to is float:
-            return True
-        if type_from is list and type_to is tuple:
-            return True
-        return False
-
-    def copy(self):
+    def copy(self) -> 'DataObject':
+        """
+        Copy via serialization/deserialization.
+        :return: A deep-data copy of this data object.
+        """
         copy = self.__class__()
         copy.deserialize(self.serialize())
         return copy
+
+    ########
+    # JSON #
+    ########
 
     def get_pretty_json_string(self):
         return json.dumps(self.serialize(), indent=2)
@@ -104,6 +108,41 @@ class DataObject(ABC):
     def deserialize_from_json_file(self, f):
         self.deserialize(json.load(f))
 
+    ################
+    # STATIC STUFF #
+    ################
+
+    @staticmethod
+    def try_cast(value, type_to: Type):
+        """
+        Attempt to cast a value to the given type.
+        :param value: Value to cast.
+        :param type_to: Value to cast to.
+        :return: casted value.
+        :raise TypeMismatchException if types are incompatible
+        """
+
+        # Value is of correct type, just return it
+        if isinstance(value, type_to):
+            return value
+
+        # Value can be cast to the correct type
+        if DataObject.allowed_cast(value.__class__, type_to):
+            return type_to(value)
+
+        raise TypeMismatchException(
+            f"Tried to cast a value from type "
+            f"'{value.__class__.__name__}' "
+            f"to type '{type_to.__name__}'")
+
+    @staticmethod
+    def allowed_cast(type_from: Type, type_to: Type):
+        if type_from is int and type_to is float:
+            return True
+        if type_from is list and type_to is tuple:
+            return True
+        return False
+
 
 KeyType = TypeVar("KeyType")
 ValType = TypeVar("ValType", bound=DataObject)
@@ -112,12 +151,12 @@ ValType = TypeVar("ValType", bound=DataObject)
 class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners):
 
     def __init__(self, key_type: Type[KeyType], value_type: Type[ValType]):
-        HasOnChangeListeners.__init__(self)
         """
         A DataObject version of a dictionary,
         with values that are data objects.
         :param value_type: The DataObject value type.
         """
+        HasOnChangeListeners.__init__(self)
         self._key_type = key_type
         self._value_type = value_type
         self._data = defaultdict(lambda: self._value_type())
@@ -152,9 +191,29 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
 class DataObjectList(DataObject, Generic[ValType], HasOnChangeListeners):
 
     def __init__(self, value_type: Type[ValType]):
+        """
+        A data object version of a list.
+        :param value_type: The value type to be stored in the list.
+        """
         HasOnChangeListeners.__init__(self)
         self._value_type = value_type
         self._data = []
+
+    def __getitem__(self, index: int):
+        return self._data[index]
+
+    def __iter__(self):
+        return self._data.__iter__()
+
+    def append(self, val: ValType) -> None:
+        """
+        Append a value to the end of the list.
+        :param val: Value to append.
+        :return: None.
+        """
+        val = DataObject.try_cast(val, self._value_type)
+        self._data.append(val)
+        self.invoke_on_change_listeners()
 
     def serialize(self) -> dict:
         return {i: d.serialize() for i, d in enumerate(self._data)}
@@ -167,23 +226,43 @@ class DataObjectList(DataObject, Generic[ValType], HasOnChangeListeners):
             self._data.append(val)
         self.invoke_on_change_listeners()
 
-    def __getitem__(self, index: int):
-        return self._data[index]
-
-    def __iter__(self):
-        return self._data.__iter__()
-
-    def append(self, val: ValType):
-        self._data.append(val)
-        self.invoke_on_change_listeners()
-
 
 class DataObjectSet(DataObject, Generic[ValType], HasOnChangeListeners):
 
     def __init__(self, value_type: Type[ValType]):
+        """
+        A DataObject version of a set.
+        :param value_type: The type of values in the set.
+        """
         HasOnChangeListeners.__init__(self)
         self._value_type = value_type
         self._data = set()
+
+    def __iter__(self):
+        return self._data.__iter__()
+
+    def __len__(self):
+        return len(self._data)
+
+    def add(self, val: ValType):
+        """
+        Add a DataObject to the set.
+        :param val: Value to add.
+        :return: None
+        """
+        val = DataObject.try_cast(val, self._value_type)
+        self._data.add(val)
+        self.invoke_on_change_listeners()
+
+    def remove(self, val: ValType):
+        """
+        Remove a DataObject from the set.
+        :param val: Value to remove.
+        :return: None
+        """
+        val = DataObject.try_cast(val, self._value_type)
+        self._data.remove(val)
+        self.invoke_on_change_listeners()
 
     def serialize(self) -> dict:
         return {i: d.serialize() for i, d in enumerate(list(self._data))}
@@ -196,26 +275,12 @@ class DataObjectSet(DataObject, Generic[ValType], HasOnChangeListeners):
             self._data.add(val)
         self.invoke_on_change_listeners()
 
-    def add(self, val: ValType):
-        if not isinstance(val, self._value_type):
-            raise Exception("Tried to add object of wrong type!")
-        self._data.add(val)
-        self.invoke_on_change_listeners()
-
-    def remove(self, val: ValType):
-        if not isinstance(val, self._value_type):
-            raise Exception("Tried to remove object of wrong type!")
-        self._data.remove(val)
-        self.invoke_on_change_listeners()
-
-    def __iter__(self):
-        return self._data.__iter__()
-
-    def __len__(self):
-        return len(self._data)
-
 
 def is_jsonable(x):
+    """
+    :param x: Value to test.
+    :return: True if value can be JSON-serialized.
+    """
     try:
         json.dumps(x)
         return True
@@ -223,18 +288,15 @@ def is_jsonable(x):
         return False
 
 
-class NotSerializableError(Exception):
-    pass
-
-
 class RawDataObject(DataObject, HasOnChangeListeners):
 
     def __init__(self, value):
-        HasOnChangeListeners.__init__(self)
         """
-        Represents a bottom-level data object, storing a raw data value.
+        Represents a bottom-level data object, storing
+        a raw, serializable data value.
         :param value: The default value of this data object.
         """
+        HasOnChangeListeners.__init__(self)
         if not is_jsonable(value):
             raise NotSerializableError(f"The provided value is of non-serializable type: "
                                        f"{value.__class__.__name__}")

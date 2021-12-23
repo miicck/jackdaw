@@ -38,7 +38,7 @@ def test_type_change_exception():
         data_obj = ThirdLevel()
         data_obj.field_1 = 1.0
         assert False
-    except TypeChangeException:
+    except TypeMismatchException:
         pass
 
     try:
@@ -46,7 +46,7 @@ def test_type_change_exception():
         data_obj = ThirdLevel()
         data_obj.field_2.value = 1.1
         assert False
-    except TypeChangeException:
+    except TypeMismatchException:
         pass
 
     # Should not throw because casting int -> float
