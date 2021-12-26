@@ -11,5 +11,5 @@ def start_main_loop():
     call_session_close_methods()
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     start_main_loop()
