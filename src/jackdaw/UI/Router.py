@@ -1,9 +1,8 @@
 import cairo
 from jackdaw.Gi import Gtk, Gdk
-from jackdaw.RuntimeChecks import must_be_called_from
 from jackdaw.UI.Colors import Colors
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import RouterComponentData
+from jackdaw.Data.ProjectData import RouterComponentData, RouterRouteData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Utils.Singleton import Singleton
 from typing import Iterable
@@ -15,11 +14,12 @@ import jackdaw.UI.RouterComponents
 class Router(Gtk.Window, Singleton):
 
     def __init__(self):
-        must_be_called_from(Router.instance)
         super().__init__(title="Router")
 
         self.set_default_size(800, 800)
-        data.router_components.add_on_change_listener(self.on_data_change)
+        self._current_route_start = None
+        data.router_components.add_on_change_listener(self.on_components_change)
+        data.routes.add_on_change_listener(self.on_routes_change)
 
         scroll_area = Gtk.ScrolledWindow()
         self.add(scroll_area)
@@ -33,10 +33,11 @@ class Router(Gtk.Window, Singleton):
         background.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         background.connect("draw", self.on_draw_background)
         background.connect("button-press-event", self.on_click_background)
+        self.background = background
         self.surface.add(background)
 
         self.connect("destroy", lambda e: Router.clear_instance())
-        self.on_data_change()
+        self.on_components_change()
         self.show_all()
 
     def add_track_signal(self, x, y):
@@ -45,6 +46,25 @@ class Router(Gtk.Window, Singleton):
         new_data.position.value = (x, y)
         key = data.router_components.get_unique_key()
         data.router_components[key] = new_data
+
+    def get_channel_coords(self, component_id: int, channel: str, input: bool):
+
+        component = None
+        for c in self.components:
+            if c.id == component_id:
+                component = c
+                break
+
+        if component is None:
+            raise Exception(f"Could not find the component with id {component_id}.")
+
+        x, y = component.get_channel_coords(channel, input)
+        x, y = component.translate_coordinates(self.surface, x, y)
+        return x, y
+
+    ##############
+    # PROPERTIES #
+    ##############
 
     @property
     def components(self) -> Iterable[RouterComponent]:
@@ -59,7 +79,7 @@ class Router(Gtk.Window, Singleton):
     def on_clear_singleton_instance(self):
         self.destroy()
 
-    def on_data_change(self):
+    def on_components_change(self):
 
         # Remove old components
         for c in self.components:
@@ -83,7 +103,47 @@ class Router(Gtk.Window, Singleton):
             component = component_types[comp_type](comp_id)
             self.surface.put(component, position[0], position[1])
 
+        def route_valid(r: RouterRouteData):
+            return r.from_component.value in data.router_components and \
+                   r.to_component.value in data.router_components
+
+        # Remove invalid routes
+        invalid_routes = [r for r in data.routes if not route_valid(r)]
+        for r in invalid_routes:
+            data.routes.remove(r)
+
         self.surface.show_all()
+
+    def on_routes_change(self):
+        self.background.queue_draw()
+
+    def on_click_routing_node(self, component_id: int, channel: str, input: bool):
+
+        if not input:
+            # Start a route from an output channel
+            self._current_route_start = [component_id, channel]
+
+        elif self._current_route_start is not None:
+            # End a route at an input channel
+
+            # Check if route already exists, if so, delete it
+            for route in data.routes:
+                if route.from_component.value == self._current_route_start[0] and \
+                        route.from_channel.value == self._current_route_start[1] and \
+                        route.to_component.value == component_id and \
+                        route.to_channel.value == channel:
+                    data.routes.remove(route)
+                    self._current_route_start = None
+                    return
+
+            # Create new route
+            route = RouterRouteData()
+            route.from_component.value = self._current_route_start[0]
+            route.from_channel.value = self._current_route_start[1]
+            route.to_component.value = component_id
+            route.to_channel.value = channel
+            data.routes.add(route)
+            self._current_route_start = None
 
     def on_draw_background(self, widget: Gtk.Widget, context: cairo.Context):
         width = widget.get_allocated_width()
@@ -91,6 +151,13 @@ class Router(Gtk.Window, Singleton):
         context.set_source_rgb(*Colors.background_black_key)
         context.rectangle(0, 0, width, height)
         context.fill()
+
+        # Draw connections
+        context.set_source_rgb(0.0, 0.0, 0.0)
+        for route in data.routes:
+            context.move_to(*self.get_channel_coords(route.from_component.value, route.from_channel.value, False))
+            context.line_to(*self.get_channel_coords(route.to_component.value, route.to_channel.value, True))
+        context.stroke()
 
     def on_click_background(self, area: Gtk.Widget, button: Gdk.EventButton):
 

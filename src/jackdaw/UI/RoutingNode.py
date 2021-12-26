@@ -35,6 +35,10 @@ class RoutingNode(Gtk.Box):
     def add_click_event(self, callback: Callable[[Gdk.EventButton], None]):
         self.node.connect("button-press-event", lambda w, b: callback(b))
 
+    def node_coordinates(self):
+        size = min(self.node.get_allocated_width(), self.node.get_allocated_height())
+        return self.node.translate_coordinates(self, size // 2, size // 2)
+
     ##############
     # PROPERTIES #
     ##############

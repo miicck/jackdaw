@@ -55,8 +55,8 @@ class RouterComponent(Gtk.Grid):
         self.show_all()
 
         def on_click(button: Gdk.EventButton):
-            print(f"Input node click {button}")
-            pass
+            from jackdaw.UI.Router import Router
+            Router.instance().on_click_routing_node(self.id, label, True)
 
         input_node.add_click_event(on_click)
 
@@ -71,10 +71,20 @@ class RouterComponent(Gtk.Grid):
         self.show_all()
 
         def on_click(button: Gdk.EventButton):
-            print(f"output node click {button}")
-            pass
+            from jackdaw.UI.Router import Router
+            Router.instance().on_click_routing_node(self.id, label, False)
 
         output_node.add_click_event(on_click)
+
+    def get_channel_coords(self, channel: str, input: bool):
+        d = self.inputs if input else self.outputs
+        if channel not in d:
+            raise KeyError(f"{'Input' if input else 'Output'} channel \"{channel}\" not found!")
+
+        node: RoutingNode = d[channel]
+        b = self.input_box if input else self.output_box
+        x, y = node.translate_coordinates(b, *node.node_coordinates())
+        return b.translate_coordinates(self, x, y)
 
     ###################
     # EVENT CALLBACKS #

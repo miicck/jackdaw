@@ -202,6 +202,10 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
         return len(self._data)
 
     def __contains__(self, item: KeyType):
+        if not isinstance(item, self._key_type):
+            raise TypeMismatchException(
+                f"Tried to use a key of the wrong type expected "
+                f"{self._key_type.__name__}, got {item.__class__.__name__}.")
         return item in self._data
 
     def serialize(self) -> dict:

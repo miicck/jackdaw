@@ -35,6 +35,15 @@ class RouterComponentData(DataObject):
         self.position = RawDataObject((100, 100))
 
 
+class RouterRouteData(DataObject):
+
+    def __init__(self):
+        self.from_component = RawDataObject(-1)
+        self.from_channel = RawDataObject("Unknown channel")
+        self.to_component = RawDataObject(-1)
+        self.to_channel = RawDataObject("Unknown channel")
+
+
 class ProjectData(Singleton, DataObject):
 
     def __init__(self):
@@ -45,6 +54,7 @@ class ProjectData(Singleton, DataObject):
         self.midi_clips = DataObjectDict(int, MidiClipData)
         self.playlist_clips = DataObjectSet(PlaylistClipData)
         self.router_components = DataObjectDict(int, RouterComponentData)
+        self.routes = DataObjectSet(RouterRouteData)
 
         self.load()
 

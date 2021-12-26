@@ -15,4 +15,4 @@ class ProjectDataInstance:
         return setattr(ProjectData.instance(), key, value)
 
 
-data = ProjectDataInstance()
+data: ProjectData = ProjectDataInstance()
