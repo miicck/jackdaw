@@ -1,6 +1,5 @@
 from typing import Type, Any, Generic, TypeVar, Callable
 from abc import ABC
-from collections import defaultdict
 import json
 
 
@@ -159,7 +158,51 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
         HasOnChangeListeners.__init__(self)
         self._key_type = key_type
         self._value_type = value_type
-        self._data = defaultdict(lambda: self._value_type())
+        self._data = dict()
+
+    def __getitem__(self, key) -> ValType:
+        """
+        Returns the data object stored at the given key.
+        :param key: The dictionary key.
+        :return: The data object stored at that key.
+        :raise KeyError if key not present.
+        """
+        if not isinstance(key, self._key_type):
+            raise TypeMismatchException(
+                f"Tried to use a key of the wrong type expected "
+                f"{self._key_type.__name__}, got {key.__class__.__name__}.")
+
+        if key not in self._data:
+            raise KeyError(f"Key not found in data object dictionary: \"{key}\"")
+
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, self._key_type):
+            raise TypeMismatchException(
+                f"Tried to use a key of the wrong type expected "
+                f"{self._key_type.__name__}, got {key.__class__.__name__}.")
+
+        if not isinstance(value, self._value_type):
+            raise TypeMismatchException(
+                f"Tried to use a value of the wrong type expected "
+                f"{self._value_type.__name__}, got {value.__class__.__name__}.")
+
+        if key in self._data:
+            if value != self._data[key]:
+                raise Exception(f"Tried to overwrite value at key: \"{key}\"")
+
+        self._data[key] = value
+        self.invoke_on_change_listeners()
+
+    def __iter__(self):
+        return self._data.__iter__()
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, item: KeyType):
+        return item in self._data
 
     def serialize(self) -> dict:
         return {key: self._data[key].serialize() for key in self._data}
@@ -172,21 +215,30 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
             self._data[self._key_type(key)] = val
         self.invoke_on_change_listeners()
 
-    def __getitem__(self, key) -> ValType:
+    def get_unique_key(self) -> KeyType:
         """
-        Returns the data object stored at the given key.
-        Creates a new data object if it does not exist.
-        :param key: The dictionary key.
-        :return: The data object stored at that key (or a new data object if not present).
+        Get a dictionary key that is not yet used.
+        :return: A unique key.
         """
-        if not isinstance(key, self._key_type):
-            raise TypeMismatchException(
-                f"Tried to use a key of the wrong type expected "
-                f"{self._key_type.__name__}, got {key.__class__.__name__}.")
-        return self._data[key]
+        if self._key_type == int:
+            n = 0
+            while n in self._data:
+                n += 1
+            return n
 
-    def __iter__(self):
-        return self._data.__iter__()
+        raise Exception(f"Can't generate unique key for key type {self._key_type.__name__}")
+
+    def pop(self, key: KeyType):
+        """
+        Pop the data object at the given key from the dictionary.
+        :param key: The key to pop.
+        :return: The value popped.
+        """
+        if key not in self._data:
+            raise KeyError(f"Key not found in data object dictionary: \"{key}\"")
+        data = self._data.pop(key)
+        self.invoke_on_change_listeners()
+        return data
 
 
 class DataObjectList(DataObject, Generic[ValType], HasOnChangeListeners):

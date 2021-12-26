@@ -7,7 +7,7 @@ from jackdaw.TimeControl import TimeControl
 from jackdaw.Session import session_close_method
 from jackdaw import MusicTheory
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import MidiNoteData
+from jackdaw.Data.ProjectData import MidiNoteData, MidiClipData
 from jackdaw.RuntimeChecks import must_be_called_from
 from typing import Iterable
 
@@ -221,6 +221,11 @@ class MidiEditor(Gtk.Window):
 
     @property
     def clip(self):
+
+        # Create midi clip if it doesn't already exist
+        if self._clip_number not in data.midi_clips:
+            data.midi_clips[self._clip_number] = MidiClipData()
+
         return data.midi_clips[self._clip_number]
 
     @property

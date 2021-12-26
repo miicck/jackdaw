@@ -6,6 +6,7 @@ from jackdaw.Data import data
 from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Utils.Singleton import Singleton
+from typing import Iterable
 
 # This is needed so we can enumerate RouterComponent subclasses
 import jackdaw.UI.RouterComponents
@@ -38,22 +39,39 @@ class Router(Gtk.Window, Singleton):
         self.on_data_change()
         self.show_all()
 
+    def add_track_signal(self, x, y):
+        new_data = RouterComponentData()
+        new_data.type.value = "TrackSignal"
+        new_data.position.value = (x, y)
+        key = data.router_components.get_unique_key()
+        data.router_components[key] = new_data
+
+    @property
+    def components(self) -> Iterable[RouterComponent]:
+        for c in self.surface.get_children():
+            if isinstance(c, RouterComponent):
+                yield c
+
+    ###################
+    # EVENT CALLBACKS #
+    ###################
+
     def on_clear_singleton_instance(self):
         self.destroy()
 
     def on_data_change(self):
 
         # Remove old components
-        for c in self.surface.get_children():
-            if isinstance(c, RouterComponent):
-                c.destroy()
+        for c in self.components:
+            c.destroy()
 
         # Get all component types
         component_types = dict()
         for c in RouterComponent.__subclasses__():
             component_types[c.__name__] = c
 
-        for comp_data in data.router_components:
+        for comp_id in data.router_components:
+            comp_data = data.router_components[comp_id]
 
             comp_type = comp_data.type.value
             position = comp_data.position.value
@@ -62,21 +80,10 @@ class Router(Gtk.Window, Singleton):
                 raise Exception(f"Unknown router component type: {comp_type}\n"
                                 f"Is not one of {list(component_types)}")
 
-            component = component_types[comp_type]()
-            component.data = comp_data
+            component = component_types[comp_type](comp_id)
             self.surface.put(component, position[0], position[1])
 
         self.surface.show_all()
-
-    def add_track_signal(self, x, y):
-        new_data = RouterComponentData()
-        new_data.type.value = "TrackSignal"
-        new_data.position.value = (x, y)
-        data.router_components.add(new_data)
-
-    ###################
-    # EVENT CALLBACKS #
-    ###################
 
     def on_draw_background(self, widget: Gtk.Widget, context: cairo.Context):
         width = widget.get_allocated_width()

@@ -4,8 +4,8 @@ from jackdaw.Gi import Gtk
 
 class TrackSignal(RouterComponent):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, id: int):
+        super().__init__(id)
         self.content = Gtk.Button(label="Track")
 
         self.add_input_channel()

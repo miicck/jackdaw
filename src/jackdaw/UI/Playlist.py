@@ -139,4 +139,4 @@ class Playlist(Gtk.Window, Singleton):
     # STATIC STUFF #
     ################
 
-    paste_clip_number = 1
+    paste_clip_number = 0

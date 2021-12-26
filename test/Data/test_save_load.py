@@ -1,8 +1,10 @@
+import os
+
 from ..Utils.UiTestSession import UiTestSession
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.UI.Router import Router
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import MidiNoteData
+from jackdaw.Data.ProjectData import MidiNoteData, MidiClipData
 from jackdaw.Data.ProjectData import PlaylistClipData
 from jackdaw import MusicTheory
 
@@ -60,10 +62,18 @@ def test_save_playlist_with_clip_destroy():
 
 
 def test_save_midi_clip():
+    # There should be no clips before we start
+    assert len(data.midi_clips) == 0
+
+    # Will contain saved info to check against
     saved = set()
 
     with UiTestSession(save_project=True):
 
+        # Create the midi clip
+        data.midi_clips[1] = MidiClipData()
+
+        # Add notes to the midi clip
         beat = 0
         for octave in range(MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
@@ -72,13 +82,14 @@ def test_save_midi_clip():
                 note = MidiNoteData()
                 note.note.value = to_check[0]
                 note.beat.value = to_check[1]
-
                 data.midi_clips[1].notes.add(note)
 
                 saved.add(to_check)
                 beat += 1
 
     with UiTestSession():
+
+        # Check all notes are recovered in the new session
         for note in data.midi_clips[1].notes:
             to_check = (note.note.value, note.beat.value)
             assert to_check in saved
@@ -91,6 +102,8 @@ def test_save_midi_clip_with_delete():
     saved = set()
 
     with UiTestSession(save_project=True):
+
+        data.midi_clips[1] = MidiClipData()
 
         beat = 0
         for octave in range(MidiEditor.MAX_OCTAVE + 1):

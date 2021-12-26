@@ -30,6 +30,8 @@ class TopLevel(DataObject):
 def get_example():
     data = TopLevel()
 
+    data.dict[0] = SecondLevel()
+    data.dict[0].dict[0] = ThirdLevel()
     data.dict[0].dict[0].field_1.value = "Modified string"
     assert data.dict[0].dict[0].field_1.value == "Modified string"
 
@@ -47,6 +49,7 @@ def get_example():
     data.set.remove(not_in_set)
     assert not_in_set not in data.set
 
+    data.dict[2] = SecondLevel()
     assert data.dict[2] is not None
     return data
 

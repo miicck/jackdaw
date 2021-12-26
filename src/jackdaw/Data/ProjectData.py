@@ -44,7 +44,7 @@ class ProjectData(Singleton, DataObject):
         # Setup data components
         self.midi_clips = DataObjectDict(int, MidiClipData)
         self.playlist_clips = DataObjectSet(PlaylistClipData)
-        self.router_components = DataObjectSet(RouterComponentData)
+        self.router_components = DataObjectDict(int, RouterComponentData)
 
         self.load()
 

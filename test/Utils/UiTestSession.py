@@ -9,6 +9,12 @@ import os
 class UiTestSession:
 
     def __init__(self, main_loop_ms=200, save_project=False):
+
+        # Set the working directory to jackdaw/test
+        test_dir = os.path.dirname(__file__)
+        test_dir = test_dir[:test_dir.index("jackdaw/test")] + "jackdaw/test/"
+        os.chdir(test_dir)
+
         self.main_loop_ms = main_loop_ms
         self.save_project = save_project
 

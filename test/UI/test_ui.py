@@ -2,7 +2,7 @@ from ..Utils.UiTestSession import UiTestSession
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import MidiNoteData
+from jackdaw.Data.ProjectData import MidiNoteData, MidiClipData
 from jackdaw.Data.ProjectData import PlaylistClipData
 from jackdaw import MusicTheory
 from jackdaw.Gi import add_timeout
@@ -63,6 +63,10 @@ def test_playlist_paste_clip():
 def test_create_midi_clip():
     with UiTestSession():
 
+        # Create the midi clip
+        data.midi_clips[1] = MidiClipData()
+
+        # Add notes to midi clip
         beat = 0
         for octave in range(0, MidiEditor.MAX_OCTAVE + 1):
             for note in MusicTheory.NOTES:
@@ -76,6 +80,7 @@ def test_create_midi_clip():
                 if beat > 8:
                     beat -= 8
 
+        # Create playlist clip
         clip = PlaylistClipData()
         clip.clip.value = 1
         clip.type.value = "MIDI"
@@ -137,10 +142,8 @@ def test_create_unique_clip_no_midi():
             if c.clip.beat.value > 2:
                 c.make_unique()
 
-        # Because no midi clips existed, make_unique shouldn't do anything
-        # => there should only be one unique clip in the playlist
-        # and no midi should have been created on disk
-        assert len({c.clip.clip.value for c in pl.ui_clips}) == 1
+        # There should now be two unique clips in the playlist
+        assert len({c.clip.clip.value for c in pl.ui_clips}) == 2
 
 
 def test_open_close_router():
@@ -154,10 +157,18 @@ def test_open_close_router():
 
 def test_router_add_track_signals():
     with UiTestSession():
+        # Add 16 router components
         rt = Router.instance()
-        for x in range(1, 4):
-            for y in range(1, 4):
+        for x in range(4):
+            for y in range(4):
                 rt.add_track_signal(x * 100, y * 100)
+
+        # Remove the first two/last one
+        data.router_components.pop(0)
+        data.router_components.pop(1)
+        data.router_components.pop(15)
+
+        assert len(list(rt.components)) == 13
 
 
 def test_playlist_colors():

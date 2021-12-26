@@ -4,15 +4,15 @@ from jackdaw.UI.RoutingNode import RoutingNode
 from jackdaw.UI.Colors import Colors
 from jackdaw.Data import data
 from jackdaw.Data.ProjectData import RouterComponentData
-from typing import Union
 
 
 class RouterComponent(Gtk.Grid):
 
-    def __init__(self):
+    def __init__(self, id: int):
         super().__init__()
 
-        self.data: Union[RouterComponentData, None] = None
+        self.id = id
+        self.data: RouterComponentData = data.router_components[id]
 
         self.header_bar = Gtk.DrawingArea()
         self.header_bar.set_size_request(0, 16)
@@ -23,13 +23,13 @@ class RouterComponent(Gtk.Grid):
         self.header_bar.connect("button-press-event", self.on_click_header)
         self.header_bar.connect("motion-notify-event", self.on_drag_header)
         self.drag_start = [0, 0]
-        self.attach(self.header_bar, 1, -1, 1, 1)
+        self.attach(self.header_bar, 0, -1, 1, 1)
 
         self.inputs = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.attach(self.inputs, 0, 0, 1, 1)
+        self.attach(self.inputs, -1, 0, 1, 1)
 
         self.outputs = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.attach(self.outputs, 2, 0, 1, 1)
+        self.attach(self.outputs, 1, 0, 1, 1)
 
     ############
     # CHANNELS #
@@ -62,7 +62,7 @@ class RouterComponent(Gtk.Grid):
             return
 
         if button.button == Gdk.BUTTON_SECONDARY:
-            data.router_components.remove(self.data)
+            data.router_components.pop(self.id)
             return
 
     def on_drag_header(self, widget: Gtk.Widget, button: Gdk.EventButton):
@@ -87,8 +87,8 @@ class RouterComponent(Gtk.Grid):
 
     @property
     def content(self):
-        return self.get_child_at(1, 0)
+        return self.get_child_at(0, 0)
 
     @content.setter
     def content(self, value):
-        self.attach(value, 1, 0, 1, 1)
+        self.attach(value, 0, 0, 1, 1)
