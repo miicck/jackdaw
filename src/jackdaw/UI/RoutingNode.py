@@ -1,24 +1,28 @@
 import cairo
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.Colors import Colors
+from typing import Callable
 
 
 class RoutingNode(Gtk.Box):
 
-    def __init__(self, is_output: bool, label: str = None):
+    def __init__(self, channel_name: str, is_output: bool, label: str = None):
         super().__init__()
+
+        self._channel_name = channel_name
         self._is_output = is_output
         self._mouse_inside = False
 
         node = Gtk.DrawingArea()
-        node.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
-                        Gdk.EventMask.ENTER_NOTIFY_MASK |
-                        Gdk.EventMask.LEAVE_NOTIFY_MASK)
+        node.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK |
+                        Gdk.EventMask.LEAVE_NOTIFY_MASK |
+                        Gdk.EventMask.BUTTON_PRESS_MASK)
+
         node.connect("draw", self.on_draw)
-        node.connect("button-press-event", self.on_click)
         node.connect("enter-notify-event", self.on_mouse_enter)
         node.connect("leave-notify-event", self.on_mouse_leave)
         node.set_size_request(32, 32)
+        self.node = node
 
         label = Gtk.Label(label=label)
 
@@ -28,8 +32,20 @@ class RoutingNode(Gtk.Box):
 
         self.show_all()
 
-    def on_click(self, widget: Gtk.Widget, button: Gdk.EventButton):
-        pass
+    def add_click_event(self, callback: Callable[[Gdk.EventButton], None]):
+        self.node.connect("button-press-event", lambda w, b: callback(b))
+
+    ##############
+    # PROPERTIES #
+    ##############
+
+    @property
+    def is_output(self):
+        return self._is_output
+
+    ###################
+    # EVENT CALLBACKS #
+    ###################
 
     def on_mouse_enter(self, widget: Gtk.Widget, event: Gdk.EventCrossing):
         self._mouse_inside = True
@@ -62,7 +78,3 @@ class RoutingNode(Gtk.Box):
         context.set_source_rgb(*Colors.routing_node_centre)
         context.arc(x_centre, y_centre, half // 2, 0, 3.14159 * 2)
         context.fill()
-
-    @property
-    def is_output(self):
-        return self._is_output

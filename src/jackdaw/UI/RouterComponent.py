@@ -6,6 +6,10 @@ from jackdaw.Data import data
 from jackdaw.Data.ProjectData import RouterComponentData
 
 
+class ChannelExistsException(Exception):
+    pass
+
+
 class RouterComponent(Gtk.Grid):
 
     def __init__(self, id: int):
@@ -25,31 +29,52 @@ class RouterComponent(Gtk.Grid):
         self.drag_start = [0, 0]
         self.attach(self.header_bar, 0, -1, 1, 1)
 
-        self.inputs = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.attach(self.inputs, -1, 0, 1, 1)
+        self.inputs = dict()
+        self.input_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.attach(self.input_box, -1, 0, 1, 1)
 
-        self.outputs = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.attach(self.outputs, 1, 0, 1, 1)
+        self.outputs = dict()
+        self.output_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.attach(self.output_box, 1, 0, 1, 1)
 
     ############
     # CHANNELS #
     ############
 
-    def add_input_channel(self, label=None):
-        input_node = RoutingNode(False, label=label)
-        self.inputs.add(input_node)
+    # If we want channels to be addable/removable at runtime,
+    # then we need to save this info. A RouterComponentChannelData
+    # object would then be needed.
+    def add_input_channel(self, label: str):
+
+        if label in self.inputs:
+            raise ChannelExistsException(f"Input channel \"{label}\" already exists!")
+
+        input_node = RoutingNode(label, False, label=label)
+        self.inputs[label] = input_node
+        self.input_box.add(input_node)
         self.show_all()
 
-    def remove_input_channel(self):
-        raise NotImplementedError()
+        def on_click(button: Gdk.EventButton):
+            print(f"Input node click {button}")
+            pass
 
-    def add_output_channel(self, label=None):
-        output_node = RoutingNode(True, label=label)
-        self.outputs.add(output_node)
+        input_node.add_click_event(on_click)
+
+    def add_output_channel(self, label: str):
+
+        if label in self.outputs:
+            raise ChannelExistsException(f"Output channel \"{label}\" already exists!")
+
+        output_node = RoutingNode(label, True, label=label)
+        self.outputs[label] = output_node
+        self.output_box.add(output_node)
         self.show_all()
 
-    def remove_output_channel(self):
-        raise NotImplementedError()
+        def on_click(button: Gdk.EventButton):
+            print(f"output node click {button}")
+            pass
+
+        output_node.add_click_event(on_click)
 
     ###################
     # EVENT CALLBACKS #
