@@ -6,6 +6,7 @@ from jackdaw.Data.ProjectData import RouterComponentData, RouterRouteData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Utils.Singleton import Singleton
 from typing import Iterable
+import numpy as np
 
 # This is needed so we can enumerate RouterComponent subclasses
 import jackdaw.UI.RouterComponents
@@ -155,8 +156,25 @@ class Router(Gtk.Window, Singleton):
         # Draw connections
         context.set_source_rgb(0.0, 0.0, 0.0)
         for route in data.routes:
-            context.move_to(*self.get_channel_coords(route.from_component.value, route.from_channel.value, False))
-            context.line_to(*self.get_channel_coords(route.to_component.value, route.to_channel.value, True))
+            start = self.get_channel_coords(route.from_component.value, route.from_channel.value, False)
+            end = self.get_channel_coords(route.to_component.value, route.to_channel.value, True)
+
+            # Draw line
+            context.move_to(*start)
+            context.line_to(*end)
+
+            # Draw arrowhead
+            start = np.array(start)
+            end = np.array(end)
+            centre = (start + end) / 2.0
+            t = (end - start) / np.linalg.norm(end - start)
+            n = np.array([t[1], -t[0]])
+            d = 10
+
+            context.move_to(*(centre + (n - t) * d))
+            context.line_to(*centre)
+            context.line_to(*(centre + (-n - t) * d))
+
         context.stroke()
 
     def on_click_background(self, area: Gtk.Widget, button: Gdk.EventButton):
