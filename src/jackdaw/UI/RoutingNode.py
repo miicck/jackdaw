@@ -1,5 +1,5 @@
 import cairo
-from jackdaw.Gi import Gtk
+from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.Colors import Colors
 
 
@@ -8,9 +8,16 @@ class RoutingNode(Gtk.Box):
     def __init__(self, is_output: bool, label: str = None):
         super().__init__()
         self._is_output = is_output
+        self._mouse_inside = False
 
         node = Gtk.DrawingArea()
+        node.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
+                        Gdk.EventMask.ENTER_NOTIFY_MASK |
+                        Gdk.EventMask.LEAVE_NOTIFY_MASK)
         node.connect("draw", self.on_draw)
+        node.connect("button-press-event", self.on_click)
+        node.connect("enter-notify-event", self.on_mouse_enter)
+        node.connect("leave-notify-event", self.on_mouse_leave)
         node.set_size_request(32, 32)
 
         label = Gtk.Label(label=label)
@@ -20,6 +27,17 @@ class RoutingNode(Gtk.Box):
         packer(label, False, True, 0)
 
         self.show_all()
+
+    def on_click(self, widget: Gtk.Widget, button: Gdk.EventButton):
+        pass
+
+    def on_mouse_enter(self, widget: Gtk.Widget, event: Gdk.EventCrossing):
+        self._mouse_inside = True
+        self.queue_draw()
+
+    def on_mouse_leave(self, widget: Gtk.Widget, event: Gdk.EventCrossing):
+        self._mouse_inside = False
+        self.queue_draw()
 
     def on_draw(self, widget: Gtk.Widget, context: cairo.Context):
         width = widget.get_allocated_width()
@@ -33,7 +51,11 @@ class RoutingNode(Gtk.Box):
         size -= 4
         half -= 2
 
-        context.set_source_rgb(*Colors.routing_node_border)
+        col = Colors.routing_node_border
+        if self._mouse_inside:
+            col = [1.0, 0.0, 0.0]
+
+        context.set_source_rgb(*col)
         context.arc(x_centre, y_centre, half, 0, 3.14159 * 2)
         context.fill()
 

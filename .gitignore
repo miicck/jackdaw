@@ -1,6 +1,6 @@
 .idea
 .coverage
+*ProjectData.json
 coverage_report/
-*ProjectData*
 *egg-info*
 *__pycache__
