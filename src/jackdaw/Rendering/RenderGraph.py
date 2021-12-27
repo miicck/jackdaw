@@ -39,8 +39,6 @@ class RenderGraph(Singleton):
 
     def recalculate_routes(self):
 
-        print("Recalculating render routes for", self)
-
         # Clear the master output renderers
         self._master_outputs.clear()
 
