@@ -3,7 +3,6 @@ from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.RoutingNode import RoutingNode
 from jackdaw.UI.Colors import Colors
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import RouterComponentData
 
 
 class ChannelExistsException(Exception):
@@ -15,8 +14,7 @@ class RouterComponent(Gtk.Grid):
     def __init__(self, id: int):
         super().__init__()
 
-        self.id = id
-        self.data: RouterComponentData = data.router_components[id]
+        self._id = id
 
         self.header_bar = Gtk.DrawingArea()
         self.header_bar.set_size_request(0, 16)
@@ -119,6 +117,14 @@ class RouterComponent(Gtk.Grid):
     ##############
     # PROPERTIES #
     ##############
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def data(self):
+        return data.router_components[self.id].component_data
 
     @property
     def content(self):

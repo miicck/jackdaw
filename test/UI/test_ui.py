@@ -2,7 +2,9 @@ from ..Utils.JackdawTestSession import JackdawTestSession
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import MidiNoteData, MidiClipData, PlaylistClipData, RouterComponentData, RouterRouteData
+from jackdaw.Data.ProjectData import \
+    MidiNoteData, MidiClipData, PlaylistClipData, \
+    RouterComponentData, RouterComponentDataWrapper, RouterRouteData
 from jackdaw import MusicTheory
 from jackdaw.Gi import add_timeout
 from jackdaw.UI.Router import Router
@@ -162,7 +164,7 @@ def test_router_add_track_signals():
         rt = Router.instance()
         for x in range(4):
             for y in range(4):
-                rt.add_track_signal(x * 100, y * 100)
+                rt.add_component("TrackSignalData", x * 100, y * 100)
 
         # Remove the first two/last one
         data.router_components.pop(0)
@@ -173,6 +175,11 @@ def test_router_add_track_signals():
 
 
 def test_channel_exists_exception():
+    class TestCompData(RouterComponentData):
+
+        def create_component(self, id: int):
+            return TestComp(id)
+
     # Component test class
     class TestComp(RouterComponent):
 
@@ -199,9 +206,8 @@ def test_channel_exists_exception():
 
     with JackdawTestSession():
         # Create a test component
-        comp_data = RouterComponentData()
-        comp_data.type.value = "TestComp"
-        comp_data.position.value = (100, 100)
+        comp_data = RouterComponentDataWrapper()
+        comp_data.datatype.value = "TestCompData"
         comp_id = data.router_components.get_unique_key()
         data.router_components[comp_id] = comp_data
 
@@ -214,6 +220,12 @@ def test_channel_exists_exception():
 def test_router_connect():
     # Check no components were leftover from previous test
     assert len(data.router_components) == 0
+
+    # Test component data class
+    class TestCompData(RouterComponentData):
+
+        def create_component(self, id: int):
+            return TestComp(id)
 
     # Test component class
     class TestComp(RouterComponent):
@@ -233,9 +245,9 @@ def test_router_connect():
         ids = list()
         for j in range(0, 4):
             for i in range(0, 4):
-                comp_data = RouterComponentData()
-                comp_data.type.value = "TestComp"
-                comp_data.position.value = (200 * (i + 1), 100 * (1 + j + i % 2))
+                comp_data = RouterComponentDataWrapper()
+                comp_data.datatype.value = "TestCompData"
+                comp_data.component_data.position.value = (200 * (i + 1), 100 * (1 + j + i % 2))
                 comp_id = data.router_components.get_unique_key()
                 data.router_components[comp_id] = comp_data
                 ids.append(comp_id)

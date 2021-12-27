@@ -134,7 +134,7 @@ def test_save_midi_clip_with_delete():
 def test_save_router():
     with JackdawTestSession(save_project=True):
         r = Router.instance()
-        r.add_track_signal(100, 100)
+        r.add_component("TrackSignalData", 100, 100)
         assert len(data.router_components) == 1
 
     with JackdawTestSession(assert_empty_project=False):

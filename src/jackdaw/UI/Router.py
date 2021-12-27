@@ -2,7 +2,7 @@ import cairo
 from jackdaw.Gi import Gtk, Gdk
 from jackdaw.UI.Colors import Colors
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import RouterComponentData, RouterRouteData
+from jackdaw.Data.ProjectData import RouterComponentData, RouterComponentDataWrapper, RouterRouteData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Utils.Singleton import Singleton
 from typing import Iterable
@@ -41,12 +41,23 @@ class Router(Gtk.Window, Singleton):
         self.on_components_change()
         self.show_all()
 
-    def add_track_signal(self, x, y):
-        new_data = RouterComponentData()
-        new_data.type.value = "TrackSignal"
-        new_data.position.value = (x, y)
-        key = data.router_components.get_unique_key()
-        data.router_components[key] = new_data
+    def add_component(self, data_type_name: str, x: int, y: int):
+
+        for c in RouterComponentData.__subclasses__():
+            if c.__name__ == data_type_name:
+                # Create new data of the given data type
+                new_data = c()
+                new_data.position.value = (x, y)
+                key = data.router_components.get_unique_key()
+
+                # Create the data wrapper for the above data
+                wrapper = RouterComponentDataWrapper()
+                wrapper.datatype.value = c.__name__
+                wrapper.component_data = new_data
+                data.router_components[key] = wrapper
+                return
+
+        raise Exception(f"Unknown RouterComponent data type \"{data_type_name}\"")
 
     def get_channel_coords(self, component_id: int, channel: str, input: bool):
 
@@ -86,22 +97,15 @@ class Router(Gtk.Window, Singleton):
         for c in self.components:
             c.destroy()
 
-        # Get all component types
-        component_types = dict()
-        for c in RouterComponent.__subclasses__():
-            component_types[c.__name__] = c
+        # Get all component data types
+        data_types = dict()
+        for c in RouterComponentData.__subclasses__():
+            data_types[c.__name__] = c
 
         for comp_id in data.router_components:
-            comp_data = data.router_components[comp_id]
-
-            comp_type = comp_data.type.value
+            comp_data: RouterComponentData = data.router_components[comp_id].component_data
             position = comp_data.position.value
-
-            if comp_type not in component_types:
-                raise Exception(f"Unknown router component type: {comp_type}\n"
-                                f"Is not one of {list(component_types)}")
-
-            component = component_types[comp_type](comp_id)
+            component = comp_data.create_component(comp_id)
             self.surface.put(component, position[0], position[1])
 
         def route_valid(r: RouterRouteData):
@@ -181,15 +185,15 @@ class Router(Gtk.Window, Singleton):
 
         if button.button == Gdk.BUTTON_SECONDARY:
 
-            # Create context menu
-            context_options = {
-                "Add: Track signal": lambda a, b, x=button.x, y=button.y: self.add_track_signal(x, y)
-            }
-
             menu = Gtk.Menu()
-            for i, label in enumerate(context_options):
-                entry = Gtk.MenuItem(label=label)
-                entry.connect("button-press-event", context_options[label])
+
+            i = 0
+            for c in RouterComponentData.__subclasses__():
+                entry = Gtk.MenuItem(label=f"Add {c.diaply_name()}")
+                entry.connect("button-press-event",
+                              lambda a, b, x=button.x, y=button.y, c=c: self.add_component(c.__name__, x, y))
                 menu.attach(entry, 0, 1, i, i + 1)
+                i += 1
+
             menu.show_all()
             menu.popup(None, None, None, None, button.button, button.time)

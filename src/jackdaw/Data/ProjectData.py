@@ -31,8 +31,37 @@ class PlaylistClipData(DataObject):
 class RouterComponentData(DataObject):
 
     def __init__(self):
-        self.type = RawDataObject("TrackSignal")
         self.position = RawDataObject((100, 100))
+
+    def create_component(self, id: int):
+        raise Exception("Tried to create a router component from uninitialized data!")
+
+    @classmethod
+    def diaply_name(cls):
+        return cls.__name__.replace("Data", "")
+
+
+class RouterComponentDataWrapper(DataObject):
+
+    def __init__(self):
+        self.datatype = RawDataObject("Unknown data type")
+        self.component_data = RouterComponentData()
+        self.datatype.add_on_change_listener(self.set_datatype)
+
+    def set_datatype(self):
+        for c in RouterComponentData.__subclasses__():
+            if c.__name__ == self.datatype.value:
+                if isinstance(self.component_data, c):
+                    return  # Already of correct type
+                if not isinstance(self.component_data, RouterComponentData):
+                    raise Exception("Tried to overwrite component data with different type!")
+                self.component_data = c()
+                return
+        raise Exception(f"Unknown component datatype \"{self.datatype.value}\"")
+
+    def deserialize(self, data: dict) -> None:
+        self.datatype.value = data["datatype"]
+        super().deserialize(data)
 
 
 class RouterRouteData(DataObject):
@@ -53,7 +82,7 @@ class ProjectData(Singleton, DataObject):
         # Setup data components
         self.midi_clips = DataObjectDict(int, MidiClipData)
         self.playlist_clips = DataObjectSet(PlaylistClipData)
-        self.router_components = DataObjectDict(int, RouterComponentData)
+        self.router_components = DataObjectDict(int, RouterComponentDataWrapper)
         self.routes = DataObjectSet(RouterRouteData)
 
         self.load()
