@@ -1,39 +1,40 @@
-from ..Utils.UiTestSession import UiTestSession
+from ..Utils.JackdawTestSession import JackdawTestSession
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.Data import data
-from jackdaw.Data.ProjectData import MidiNoteData, MidiClipData
-from jackdaw.Data.ProjectData import PlaylistClipData
+from jackdaw.Data.ProjectData import MidiNoteData, MidiClipData, PlaylistClipData, RouterComponentData, RouterRouteData
 from jackdaw import MusicTheory
 from jackdaw.Gi import add_timeout
 from jackdaw.UI.Router import Router
+from jackdaw.UI.RouterComponent import RouterComponent, ChannelExistsException
 from jackdaw.UI.ControlPanel import ControlPanel
+from jackdaw.Gi import Gtk
 
 
 def test_control_panel():
-    with UiTestSession():
+    with JackdawTestSession():
         ControlPanel.instance()
 
 
 def test_open_playlist():
-    with UiTestSession():
+    with JackdawTestSession():
         assert Playlist.instance() is not None
 
 
 def test_open_midi_editor():
-    with UiTestSession():
+    with JackdawTestSession():
         assert MidiEditor.open(1) is not None
 
 
 def test_open_close_midi_editor():
-    with UiTestSession():
+    with JackdawTestSession():
         for i in range(10):
             assert MidiEditor.open(i) is not None
             MidiEditor.close(i)
 
 
 def test_open_many_midi_editors():
-    with UiTestSession() as ts:
+    with JackdawTestSession() as ts:
         def add_editor():
             number = len(MidiEditor.open_editors) + 1
             assert MidiEditor.open(number) is not None
@@ -42,7 +43,7 @@ def test_open_many_midi_editors():
 
 
 def test_create_playlist_clips():
-    with UiTestSession():
+    with JackdawTestSession():
         for i in range(100):
             clip = PlaylistClipData()
             clip.beat.value = i % 16
@@ -53,7 +54,7 @@ def test_create_playlist_clips():
 
 
 def test_playlist_paste_clip():
-    with UiTestSession():
+    with JackdawTestSession():
         pl = Playlist.instance()
         pl.paste_clip(100, 100)
         assert len(list(pl.ui_clips)) == 1
@@ -61,7 +62,7 @@ def test_playlist_paste_clip():
 
 
 def test_create_midi_clip():
-    with UiTestSession():
+    with JackdawTestSession():
 
         # Create the midi clip
         data.midi_clips[1] = MidiClipData()
@@ -98,14 +99,14 @@ def test_create_midi_clip():
 
 
 def test_midi_editor_paste_note():
-    with UiTestSession():
+    with JackdawTestSession():
         me = MidiEditor.open(1)
         me.paste_note(100, 100)
         assert len(data.midi_clips[1].notes) == 1
 
 
 def test_create_unique_clip():
-    with UiTestSession():
+    with JackdawTestSession():
 
         for i in range(2):
             clip = PlaylistClipData()
@@ -129,7 +130,7 @@ def test_create_unique_clip():
 
 
 def test_create_unique_clip_no_midi():
-    with UiTestSession():
+    with JackdawTestSession():
 
         for i in range(2):
             clip = PlaylistClipData()
@@ -147,7 +148,7 @@ def test_create_unique_clip_no_midi():
 
 
 def test_open_close_router():
-    with UiTestSession() as ts:
+    with JackdawTestSession() as ts:
         Router.instance()
         qt = ts.main_loop_ms // 4
         add_timeout(Router.clear_instance, qt)
@@ -156,7 +157,7 @@ def test_open_close_router():
 
 
 def test_router_add_track_signals():
-    with UiTestSession():
+    with JackdawTestSession():
         # Add 16 router components
         rt = Router.instance()
         for x in range(4):
@@ -171,10 +172,117 @@ def test_router_add_track_signals():
         assert len(list(rt.components)) == 13
 
 
+def test_channel_exists_exception():
+    # Component test class
+    class TestComp(RouterComponent):
+
+        init_called = False
+
+        def __init__(self, id: int):
+            super().__init__(id)
+            self.add_input_channel("input")
+            self.add_output_channel("output")
+
+            try:
+                self.add_input_channel("input")
+                assert False
+            except ChannelExistsException:
+                pass
+
+            try:
+                self.add_output_channel("output")
+                assert False
+            except ChannelExistsException:
+                pass
+
+            TestComp.init_called = True
+
+    with JackdawTestSession():
+        # Create a test component
+        comp_data = RouterComponentData()
+        comp_data.type.value = "TestComp"
+        comp_data.position.value = (100, 100)
+        comp_id = data.router_components.get_unique_key()
+        data.router_components[comp_id] = comp_data
+
+        # Open the router
+        Router.instance()
+
+        assert TestComp.init_called
+
+
+def test_router_connect():
+    # Check no components were leftover from previous test
+    assert len(data.router_components) == 0
+
+    # Test component class
+    class TestComp(RouterComponent):
+
+        def __init__(self, id: int):
+            super().__init__(id)
+            self.add_input_channel("input")
+            self.add_output_channel("output")
+            self.content = Gtk.Label(label="Test")
+
+    with JackdawTestSession():
+
+        # Open the router ui
+        rt: Router = Router.instance()
+
+        # Create some test components
+        ids = list()
+        for j in range(0, 4):
+            for i in range(0, 4):
+                comp_data = RouterComponentData()
+                comp_data.type.value = "TestComp"
+                comp_data.position.value = (200 * (i + 1), 100 * (1 + j + i % 2))
+                comp_id = data.router_components.get_unique_key()
+                data.router_components[comp_id] = comp_data
+                ids.append(comp_id)
+        assert len(data.router_components) == len(ids)
+
+        # Create routing links between components
+        for i in range(1, len(ids)):
+            if i % 2 == 0:
+                # The data way
+                route = RouterRouteData()
+                route.from_component.value = ids[i - 1]
+                route.from_channel.value = "output"
+                route.to_component.value = ids[i]
+                route.to_channel.value = "input"
+                data.routes.add(route)
+            else:
+                # The UI way
+                rt.on_click_routing_node(ids[i - 1], "output", False)
+                rt.on_click_routing_node(ids[i], "input", True)
+        assert len(data.routes) == len(ids) - 1
+
+        # Destroy the second link the data way
+        routes_before = len(data.routes)
+        for i, route in enumerate(data.routes):
+            if i == 1:
+                data.routes.remove(route)
+                break
+        assert len(data.routes) == routes_before - 1
+
+        # Destroy the first link the ui way
+        routes_before = len(data.routes)
+        rt.on_click_routing_node(ids[0], "output", False)
+        rt.on_click_routing_node(ids[1], "input", True)
+        assert len(data.routes) == routes_before - 1
+
+        # Destroy some components
+        for i, comp_id in enumerate(list(ids)):
+            if i % 3 == 0:
+                data.router_components.pop(comp_id)
+                ids.remove(comp_id)
+        assert len(list(rt.components)) == len(ids)
+
+
 def test_playlist_colors():
     assert not Playlist.instance_exists()
 
-    with UiTestSession(main_loop_ms=500):
+    with JackdawTestSession():
 
         for beat in range(10):
             beat = beat * 4

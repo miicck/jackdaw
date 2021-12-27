@@ -71,6 +71,12 @@ class ProjectData(Singleton, DataObject):
     def on_clear_singleton_instance(self):
         self.save()
 
+    def empty_project_assertions(self):
+        assert len(self.midi_clips) == 0
+        assert len(self.playlist_clips) == 0
+        assert len(self.router_components) == 0
+        assert len(self.routes) == 0
+
     ################
     # STATIC STUFF #
     ################

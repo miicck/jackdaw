@@ -1,10 +1,10 @@
-from ..Utils.UiTestSession import UiTestSession
+from ..Utils.JackdawTestSession import JackdawTestSession
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Gi import add_timeout
 
 
 def test_time_toggle_play_pause():
-    with UiTestSession() as ts:
+    with JackdawTestSession() as ts:
         def step():
             TimeControl.toggle_play_pause()
             beat_time = TimeControl.get_time_as_beats()
@@ -14,7 +14,7 @@ def test_time_toggle_play_pause():
 
 
 def test_playhead_time():
-    with UiTestSession(main_loop_ms=200) as ts:
+    with JackdawTestSession(main_loop_ms=200) as ts:
         TimeControl.set_playhead_time(4.0)
         assert TimeControl.get_playhead_time() == 4.0
         assert TimeControl.get_time() == 4.0

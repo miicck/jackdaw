@@ -1,6 +1,6 @@
 import os
 
-from ..Utils.UiTestSession import UiTestSession
+from ..Utils.JackdawTestSession import JackdawTestSession
 from jackdaw.UI.MidiEditor import MidiEditor
 from jackdaw.UI.Router import Router
 from jackdaw.Data import data
@@ -12,7 +12,7 @@ from jackdaw import MusicTheory
 def test_save_playlist():
     saved = set()
 
-    with UiTestSession(save_project=True):
+    with JackdawTestSession(save_project=True):
         for i in range(25):
             to_check = (i, i, i % 16)
 
@@ -24,7 +24,7 @@ def test_save_playlist():
 
             saved.add(to_check)
 
-    with UiTestSession():
+    with JackdawTestSession(assert_empty_project=False):
         for c in data.playlist_clips:
             to_check = (c.clip.value, c.track.value, c.beat.value)
             assert to_check in saved
@@ -36,7 +36,7 @@ def test_save_playlist():
 def test_save_playlist_with_clip_destroy():
     saved = set()
 
-    with UiTestSession(save_project=True):
+    with JackdawTestSession(save_project=True):
         for i in range(25):
             to_check = (i, i, i % 16)
 
@@ -52,7 +52,7 @@ def test_save_playlist_with_clip_destroy():
             else:
                 saved.add(to_check)
 
-    with UiTestSession():
+    with JackdawTestSession(assert_empty_project=False):
         for c in data.playlist_clips:
             to_check = (c.clip.value, c.track.value, c.beat.value)
             assert to_check in saved
@@ -68,7 +68,7 @@ def test_save_midi_clip():
     # Will contain saved info to check against
     saved = set()
 
-    with UiTestSession(save_project=True):
+    with JackdawTestSession(save_project=True):
 
         # Create the midi clip
         data.midi_clips[1] = MidiClipData()
@@ -87,7 +87,7 @@ def test_save_midi_clip():
                 saved.add(to_check)
                 beat += 1
 
-    with UiTestSession():
+    with JackdawTestSession(assert_empty_project=False):
 
         # Check all notes are recovered in the new session
         for note in data.midi_clips[1].notes:
@@ -101,7 +101,7 @@ def test_save_midi_clip():
 def test_save_midi_clip_with_delete():
     saved = set()
 
-    with UiTestSession(save_project=True):
+    with JackdawTestSession(save_project=True):
 
         data.midi_clips[1] = MidiClipData()
 
@@ -122,7 +122,7 @@ def test_save_midi_clip_with_delete():
 
                 beat += 1
 
-    with UiTestSession():
+    with JackdawTestSession(assert_empty_project=False):
         for note in data.midi_clips[1].notes:
             to_check = (note.note.value, note.beat.value)
             assert to_check in saved
@@ -132,10 +132,10 @@ def test_save_midi_clip_with_delete():
 
 
 def test_save_router():
-    with UiTestSession(save_project=True):
+    with JackdawTestSession(save_project=True):
         r = Router.instance()
         r.add_track_signal(100, 100)
         assert len(data.router_components) == 1
 
-    with UiTestSession():
+    with JackdawTestSession(assert_empty_project=False):
         assert len(data.router_components) == 1

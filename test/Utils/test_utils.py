@@ -1,10 +1,10 @@
-from .UiTestSession import UiTestSession
+from .JackdawTestSession import JackdawTestSession
 from jackdaw.Data.ProjectData import ProjectData
 from jackdaw.Utils.Singleton import Singleton, SingletonException
 
 
 def test_ui_closed_properly():
-    with UiTestSession():
+    with JackdawTestSession():
         pass
 
     assert not ProjectData.instance_exists()

@@ -24,11 +24,12 @@ class RoutingNode(Gtk.Box):
         node.set_size_request(32, 32)
         self.node = node
 
-        label = Gtk.Label(label=label)
+        self.label = Gtk.Label(label=label)
+        self.label.set_opacity(0.0)
 
         packer = self.pack_start if self.is_output else self.pack_end
         packer(node, False, True, 0)
-        packer(label, False, True, 0)
+        packer(self.label, False, True, 0)
 
         self.show_all()
 
@@ -53,10 +54,12 @@ class RoutingNode(Gtk.Box):
 
     def on_mouse_enter(self, widget: Gtk.Widget, event: Gdk.EventCrossing):
         self._mouse_inside = True
+        self.label.set_opacity(1.0)
         self.queue_draw()
 
     def on_mouse_leave(self, widget: Gtk.Widget, event: Gdk.EventCrossing):
         self._mouse_inside = False
+        self.label.set_opacity(0.0)
         self.queue_draw()
 
     def on_draw(self, widget: Gtk.Widget, context: cairo.Context):
