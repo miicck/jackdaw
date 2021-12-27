@@ -68,9 +68,9 @@ class RouterRouteData(DataObject):
 
     def __init__(self):
         self.from_component = RawDataObject(-1)
-        self.from_channel = RawDataObject("Unknown channel")
+        self.from_node = RawDataObject("Unknown node")
         self.to_component = RawDataObject(-1)
-        self.to_channel = RawDataObject("Unknown channel")
+        self.to_node = RawDataObject("Unknown node")
 
 
 class ProjectData(Singleton, DataObject):

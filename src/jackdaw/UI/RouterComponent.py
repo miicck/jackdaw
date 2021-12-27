@@ -5,7 +5,7 @@ from jackdaw.UI.Colors import Colors
 from jackdaw.Data import data
 
 
-class ChannelExistsException(Exception):
+class NodeExistsException(Exception):
     pass
 
 
@@ -35,17 +35,14 @@ class RouterComponent(Gtk.Grid):
         self.output_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.attach(self.output_box, 1, 0, 1, 1)
 
-    ############
-    # CHANNELS #
-    ############
+    #########
+    # NODES #
+    #########
 
-    # If we want channels to be addable/removable at runtime,
-    # then we need to save this info. A RouterComponentChannelData
-    # object would then be needed.
-    def add_input_channel(self, label: str):
+    def add_input_node(self, label: str):
 
         if label in self.inputs:
-            raise ChannelExistsException(f"Input channel \"{label}\" already exists!")
+            raise NodeExistsException(f"Input node \"{label}\" already exists!")
 
         input_node = RoutingNode(label, False, label=label)
         self.inputs[label] = input_node
@@ -58,10 +55,10 @@ class RouterComponent(Gtk.Grid):
 
         input_node.add_click_event(on_click)
 
-    def add_output_channel(self, label: str):
+    def add_output_node(self, label: str):
 
         if label in self.outputs:
-            raise ChannelExistsException(f"Output channel \"{label}\" already exists!")
+            raise NodeExistsException(f"Output node \"{label}\" already exists!")
 
         output_node = RoutingNode(label, True, label=label)
         self.outputs[label] = output_node
@@ -74,12 +71,12 @@ class RouterComponent(Gtk.Grid):
 
         output_node.add_click_event(on_click)
 
-    def get_channel_coords(self, channel: str, input: bool):
+    def get_node_coords(self, node_name: str, input: bool):
         d = self.inputs if input else self.outputs
-        if channel not in d:
-            raise KeyError(f"{'Input' if input else 'Output'} channel \"{channel}\" not found!")
+        if node_name not in d:
+            raise KeyError(f"{'Input' if input else 'Output'} node \"{node_name}\" not found!")
 
-        node: RoutingNode = d[channel]
+        node: RoutingNode = d[node_name]
         b = self.input_box if input else self.output_box
         x, y = node.translate_coordinates(b, *node.node_coordinates())
         return b.translate_coordinates(self, x, y)

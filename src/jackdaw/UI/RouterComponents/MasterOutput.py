@@ -13,5 +13,5 @@ class MasterOutput(RouterComponent):
 
     def __init__(self, id: int):
         super().__init__(id)
-        self.add_input_channel("To Master")
+        self.add_input_node("To Master")
         self.content = Gtk.Label(label="Master output")

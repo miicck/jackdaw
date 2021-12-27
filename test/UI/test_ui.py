@@ -8,7 +8,7 @@ from jackdaw.Data.ProjectData import \
 from jackdaw import MusicTheory
 from jackdaw.Gi import add_timeout
 from jackdaw.UI.Router import Router
-from jackdaw.UI.RouterComponent import RouterComponent, ChannelExistsException
+from jackdaw.UI.RouterComponent import RouterComponent, NodeExistsException
 from jackdaw.UI.ControlPanel import ControlPanel
 from jackdaw.Gi import Gtk
 
@@ -187,19 +187,19 @@ def test_channel_exists_exception():
 
         def __init__(self, id: int):
             super().__init__(id)
-            self.add_input_channel("input")
-            self.add_output_channel("output")
+            self.add_input_node("input")
+            self.add_output_node("output")
 
             try:
-                self.add_input_channel("input")
+                self.add_input_node("input")
                 assert False
-            except ChannelExistsException:
+            except NodeExistsException:
                 pass
 
             try:
-                self.add_output_channel("output")
+                self.add_output_node("output")
                 assert False
-            except ChannelExistsException:
+            except NodeExistsException:
                 pass
 
             TestComp.init_called = True
@@ -232,8 +232,8 @@ def test_router_connect():
 
         def __init__(self, id: int):
             super().__init__(id)
-            self.add_input_channel("input")
-            self.add_output_channel("output")
+            self.add_input_node("input")
+            self.add_output_node("output")
             self.content = Gtk.Label(label="Test")
 
     with JackdawTestSession():
@@ -259,9 +259,9 @@ def test_router_connect():
                 # The data way
                 route = RouterRouteData()
                 route.from_component.value = ids[i - 1]
-                route.from_channel.value = "output"
+                route.from_node.value = "output"
                 route.to_component.value = ids[i]
-                route.to_channel.value = "input"
+                route.to_node.value = "input"
                 data.routes.add(route)
             else:
                 # The UI way

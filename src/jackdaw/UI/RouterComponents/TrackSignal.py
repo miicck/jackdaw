@@ -20,7 +20,7 @@ class TrackSignal(RouterComponent):
     def __init__(self, id: int):
         super().__init__(id)
         data.playlist_clips.add_on_change_listener(self.on_playlist_clips_change)
-        self.add_output_channel("Track")
+        self.add_output_node("Track")
         self.on_playlist_clips_change()
 
     def on_playlist_clips_change(self):

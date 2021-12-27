@@ -32,8 +32,8 @@ class Colors:
             while len(cols) < 100:
                 cols.append(get_next(cols[-1]))
 
-            def remap(channel):
-                return channel * 0.5 + 0.25
+            def remap(col):
+                return col * 0.5 + 0.25
 
             Colors._playlist_clip_colors = [(remap(c[0]), remap(c[1]), remap(c[2]), 0.5) for c in cols]
 

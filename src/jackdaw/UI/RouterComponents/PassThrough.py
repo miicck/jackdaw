@@ -13,6 +13,6 @@ class PassThrough(RouterComponent):
 
     def __init__(self, id: int):
         super().__init__(id)
-        self.add_input_channel("input")
-        self.add_output_channel("output")
+        self.add_input_node("In")
+        self.add_output_node("Out")
         self.content = Gtk.Label(label="Pass through")

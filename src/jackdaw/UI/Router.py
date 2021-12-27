@@ -59,7 +59,7 @@ class Router(Gtk.Window, Singleton):
 
         raise Exception(f"Unknown RouterComponent data type \"{data_type_name}\"")
 
-    def get_channel_coords(self, component_id: int, channel: str, input: bool):
+    def get_node_coords(self, component_id: int, node: str, input: bool):
 
         component = None
         for c in self.components:
@@ -70,7 +70,7 @@ class Router(Gtk.Window, Singleton):
         if component is None:
             raise Exception(f"Could not find the component with id {component_id}.")
 
-        x, y = component.get_channel_coords(channel, input)
+        x, y = component.get_node_coords(node, input)
         x, y = component.translate_coordinates(self.surface, x, y)
         return x, y
 
@@ -122,21 +122,21 @@ class Router(Gtk.Window, Singleton):
     def on_routes_change(self):
         self.background.queue_draw()
 
-    def on_click_routing_node(self, component_id: int, channel: str, input: bool):
+    def on_click_routing_node(self, component_id: int, node_name: str, is_input_node: bool):
 
-        if not input:
-            # Start a route from an output channel
-            self._current_route_start = [component_id, channel]
+        if not is_input_node:
+            # Start a route from an output node
+            self._current_route_start = [component_id, node_name]
 
         elif self._current_route_start is not None:
-            # End a route at an input channel
+            # End a route at an input node
 
             # Check if route already exists, if so, delete it
             for route in data.routes:
                 if route.from_component.value == self._current_route_start[0] and \
-                        route.from_channel.value == self._current_route_start[1] and \
+                        route.from_node.value == self._current_route_start[1] and \
                         route.to_component.value == component_id and \
-                        route.to_channel.value == channel:
+                        route.to_node.value == node_name:
                     data.routes.remove(route)
                     self._current_route_start = None
                     return
@@ -144,9 +144,9 @@ class Router(Gtk.Window, Singleton):
             # Create new route
             route = RouterRouteData()
             route.from_component.value = self._current_route_start[0]
-            route.from_channel.value = self._current_route_start[1]
+            route.from_node.value = self._current_route_start[1]
             route.to_component.value = component_id
-            route.to_channel.value = channel
+            route.to_node.value = node_name
             data.routes.add(route)
             self._current_route_start = None
 
@@ -160,8 +160,8 @@ class Router(Gtk.Window, Singleton):
         # Draw connections
         context.set_source_rgb(0.0, 0.0, 0.0)
         for route in data.routes:
-            start = self.get_channel_coords(route.from_component.value, route.from_channel.value, False)
-            end = self.get_channel_coords(route.to_component.value, route.to_channel.value, True)
+            start = self.get_node_coords(route.from_component.value, route.from_node.value, False)
+            end = self.get_node_coords(route.to_component.value, route.to_node.value, True)
 
             # Draw line
             context.move_to(*start)

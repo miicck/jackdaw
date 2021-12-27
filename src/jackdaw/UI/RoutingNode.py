@@ -6,10 +6,10 @@ from typing import Callable
 
 class RoutingNode(Gtk.Box):
 
-    def __init__(self, channel_name: str, is_output: bool, label: str = None):
+    def __init__(self, node_name: str, is_output: bool, label: str = None):
         super().__init__()
 
-        self._channel_name = channel_name
+        self._node_name = node_name
         self._is_output = is_output
         self._mouse_inside = False
 
