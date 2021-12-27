@@ -1,3 +1,6 @@
+from jackdaw.Rendering.RenderProcess import RenderProcess
+
+
 class TimeControl:
     _time = 0.0
     _playhead_time = 0.0
@@ -35,7 +38,12 @@ class TimeControl:
 
     @staticmethod
     def play():
+        RenderProcess.instance().play()
         TimeControl._paused = False
+
+    @staticmethod
+    def is_playing():
+        return not TimeControl._paused
 
     @staticmethod
     def pause():
@@ -43,6 +51,7 @@ class TimeControl:
 
     @staticmethod
     def stop():
+        RenderProcess.instance().stop()
         TimeControl._paused = True
         TimeControl._time = TimeControl._playhead_time
 

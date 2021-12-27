@@ -19,25 +19,27 @@ class RenderGraph(Singleton):
 
     def render_master(self, start: int, samples: int) -> Tuple[numpy.ndarray, numpy.ndarray]:
 
-        left = numpy.zeros(samples)
-        right = numpy.zeros(samples)
+        # Output channels start as zero
+        channels = [numpy.zeros(samples), numpy.zeros(samples)]
 
+        # Sum up outputs from all master output renderers
         for master_id in self._master_outputs:
             renderer = self._master_outputs[master_id]
+            for channel in range(len(channels)):
+                render = renderer.render_master(channel, start, samples)
+                if render is not None:
+                    channels[channel] += render
 
-            # Render left channel
-            left_r = renderer.render_master(0, start, samples)
-            if left_r is not None:
-                left += left_r
+        # Clip results to -1, 1 range
+        for channel in range(len(channels)):
+            channels[channel] = numpy.clip(channels[channel], -1, 1)
 
-            # Render right channel
-            right_r = renderer.render_master(1, start, samples)
-            if right_r is not None:
-                right += right_r
-
-        return left, right
+        # Return left, right channels
+        return channels[0], channels[1]
 
     def recalculate_routes(self):
+
+        print("Recalculating render routes for", self)
 
         # Clear the master output renderers
         self._master_outputs.clear()
