@@ -34,7 +34,12 @@ class RouterComponentData(DataObject):
         self.position = RawDataObject((100, 100))
 
     def create_component(self, id: int):
-        raise Exception("Tried to create a router component from uninitialized data!")
+        raise Exception(f"Tried to create a router component from "
+                        f"uninitialized data of type \"{self.__class__.__class__}\"!")
+
+    def create_component_renderer(self):
+        raise Exception(f"Tried to create a router component renderer from "
+                        f"uninitialized data of type \"{self.__class__.__name__}\"!")
 
     @classmethod
     def diaply_name(cls):
@@ -44,8 +49,8 @@ class RouterComponentData(DataObject):
 class RouterComponentDataWrapper(DataObject):
 
     def __init__(self):
-        self.datatype = RawDataObject("Unknown data type")
-        self.component_data = RouterComponentData()
+        self.datatype: RawDataObject = RawDataObject("Unknown data type")
+        self.component_data: RouterComponentData = RouterComponentData()
         self.datatype.add_on_change_listener(self.set_datatype)
 
     def set_datatype(self):

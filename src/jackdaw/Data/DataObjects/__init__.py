@@ -1,4 +1,4 @@
-from typing import Type, Any, Generic, TypeVar, Callable
+from typing import Type, Any, Generic, TypeVar, Callable, Iterator
 from abc import ABC
 import json
 
@@ -195,13 +195,13 @@ class DataObjectDict(DataObject, Generic[KeyType, ValType], HasOnChangeListeners
         self._data[key] = value
         self.invoke_on_change_listeners()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[KeyType]:
         return self._data.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._data)
 
-    def __contains__(self, item: KeyType):
+    def __contains__(self, item: KeyType) -> bool:
         if not isinstance(item, self._key_type):
             raise TypeMismatchException(
                 f"Tried to use a key of the wrong type expected "
@@ -256,10 +256,10 @@ class DataObjectList(DataObject, Generic[ValType], HasOnChangeListeners):
         self._value_type = value_type
         self._data = []
 
-    def __getitem__(self, index: int):
+    def __getitem__(self, index: int) -> ValType:
         return self._data[index]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ValType]:
         return self._data.__iter__()
 
     def append(self, val: ValType) -> None:
@@ -295,13 +295,13 @@ class DataObjectSet(DataObject, Generic[ValType], HasOnChangeListeners):
         self._value_type = value_type
         self._data = set()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ValType]:
         return self._data.__iter__()
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         return item in self._data
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._data)
 
     def add(self, val: ValType):

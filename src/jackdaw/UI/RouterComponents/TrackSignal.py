@@ -3,6 +3,9 @@ from jackdaw.Gi import Gtk
 from jackdaw.Data import data
 from jackdaw.Data.DataObjects import *
 from jackdaw.Data.ProjectData import RouterComponentData
+from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
+from typing import Union
+import numpy
 
 
 class TrackSignalData(RouterComponentData):
@@ -13,6 +16,15 @@ class TrackSignalData(RouterComponentData):
 
     def create_component(self, id: int):
         return TrackSignal(id)
+
+    def create_component_renderer(self):
+        return TrackSignalRenderer()
+
+
+class TrackSignalRenderer(ComponentRenderer):
+
+    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[numpy.ndarray, None]:
+        raise NotImplementedError()
 
 
 class TrackSignal(RouterComponent):

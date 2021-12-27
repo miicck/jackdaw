@@ -3,6 +3,7 @@ from jackdaw.UI.Router import Router
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Utils.Singleton import Singleton
+from jackdaw.Rendering.PlotRender import plot_render
 
 
 class ControlPanel(Gtk.Window, Singleton):
@@ -29,6 +30,10 @@ class ControlPanel(Gtk.Window, Singleton):
         stop_button = Gtk.Button(label="Stop")
         stop_button.connect("clicked", lambda e: TimeControl.stop())
         buttons.add(stop_button)
+
+        render_plot_button = Gtk.Button(label="Plot Render")
+        render_plot_button.connect("clicked", lambda e: plot_render(0, 100))
+        buttons.add(render_plot_button)
 
         buttons.add(Gtk.Label(label="\nWindows\n"))
 

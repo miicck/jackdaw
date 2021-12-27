@@ -8,9 +8,6 @@ from jackdaw.Utils.Singleton import Singleton
 from typing import Iterable
 import numpy as np
 
-# This is needed so we can enumerate RouterComponent subclasses
-import jackdaw.UI.RouterComponents
-
 
 class Router(Gtk.Window, Singleton):
 
