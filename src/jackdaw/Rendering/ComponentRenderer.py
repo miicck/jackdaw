@@ -45,7 +45,9 @@ class ComponentRenderer(ABC):
         # Sum signals from each connected input renderer
         result = None
         for renderer, out_node in self._input_renderers[node]:
+
             render = renderer.render_output_signal(out_node, channel, start, samples)
+
             if render is None:
                 continue  # Renderer doesn't output this channel
 
