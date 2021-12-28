@@ -2,8 +2,8 @@ from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.Gi import Gtk
-from typing import Union
-import numpy
+from typing import Union, Dict
+import numpy as np
 
 
 class MonoToStereo(RouterComponent):
@@ -18,12 +18,19 @@ class MonoToStereo(RouterComponent):
 
 class MonoToStereoRenderer(ComponentRenderer):
 
-    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[numpy.ndarray, None]:
+    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[np.ndarray, None]:
         if node != "Out" or channel not in {0, 1}:
             return None
 
         channel_to_node = {0: "Left", 1: "Right"}
         return self.render_input_signal(channel_to_node[channel], 0, start, samples)
+
+    def render(self, output_node: str, channel: int,
+               input_node_signals: Dict[str, Dict[int, np.ndarray]]) -> Dict[int, np.ndarray]:
+        return {
+            0: input_node_signals["Left"][0],
+            1: input_node_signals["Right"][0]
+        }
 
 
 class MonoToStereoData(RouterComponentData):

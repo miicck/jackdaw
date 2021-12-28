@@ -2,8 +2,8 @@ from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.Gi import Gtk
-from typing import Union
-import numpy
+from typing import Union, Dict
+import numpy as np
 
 
 class PassThroughData(RouterComponentData):
@@ -17,10 +17,16 @@ class PassThroughData(RouterComponentData):
 
 class PassThroughRenderer(ComponentRenderer):
 
-    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[numpy.ndarray, None]:
+    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[np.ndarray, None]:
         if node != "Out":
             return None
         return self.render_input_signal("In", channel, start, samples)
+
+    def render(self, output_node: str, channel: int,
+               input_node_signals: Dict[str, Dict[int, np.ndarray]]) -> Dict[int, np.ndarray]:
+        assert len(input_node_signals) == 1
+        assert "In" in input_node_signals
+        return input_node_signals["In"]
 
 
 class PassThrough(RouterComponent):

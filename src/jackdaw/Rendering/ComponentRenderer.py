@@ -3,6 +3,8 @@ import numpy
 from typing import Union, Dict, Tuple, List
 from collections import defaultdict
 
+import numpy as np
+
 
 class ComponentRenderer(ABC):
 
@@ -11,6 +13,11 @@ class ComponentRenderer(ABC):
 
     @abstractmethod
     def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[numpy.ndarray, None]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def render(self, output_node: str, channel: int,
+               input_node_signals: Dict[str, Dict[int, np.ndarray]]) -> Dict[int, np.ndarray]:
         raise NotImplementedError()
 
     ################
