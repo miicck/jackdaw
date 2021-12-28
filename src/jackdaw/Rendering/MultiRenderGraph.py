@@ -1,11 +1,12 @@
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
 import multiprocessing as mp
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, List
 import numpy
 
-# Typedef
-RenderResults = Dict[Tuple[int, str], mp.Queue]
+# Typedefs
+NodeKey = Tuple[int, str]
+RenderResults = Dict[NodeKey, mp.Queue]
 
 
 class MultiRenderGraph(Singleton):
@@ -26,9 +27,17 @@ class MultiRenderGraph(Singleton):
         # Get dictionary of output signals to render
         render_results: RenderResults = dict()
         for route in data.routes:
-            from_id = route.from_component.value
-            from_node = route.from_node.value
-            render_results[(from_id, from_node)] = mp.Queue()
+            key = (route.from_component.value, route.from_node.value)
+            render_results[key] = mp.Queue()
+
+        # Get dictionary of input signal dependence
+        needed_inputs: Dict[int, List[NodeKey]] = dict()
+        for route in data.routes:
+            from_key = (route.from_component.value, route.from_node.value)
+            to_id = route.to_component.value
+            if to_id not in needed_inputs:
+                needed_inputs[to_id] = []
+            needed_inputs[to_id].append(from_key)
 
         # Initialize render results to None
         for key in render_results:
@@ -37,7 +46,10 @@ class MultiRenderGraph(Singleton):
         # Start render processes
         render_procs = []
         for key in render_results:
-            args = (key, render_results,)
+            inputs = []
+            if key[0] in needed_inputs:
+                inputs = needed_inputs[key[0]]
+            args = (key, inputs, render_results,)
             target = MultiRenderGraph.render_worker
             proc = mp.Process(target=target, args=args)
             proc.start()
@@ -48,5 +60,6 @@ class MultiRenderGraph(Singleton):
             rp.join()
 
     @staticmethod
-    def render_worker(key: Tuple[int, str], render_results: RenderResults):
-        print(key)
+    def render_worker(key: NodeKey, inputs: List[NodeKey],
+                      render_results: RenderResults):
+        print(key, inputs)
