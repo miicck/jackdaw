@@ -26,7 +26,7 @@ class MonoToStereoRenderer(ComponentRenderer):
         return self.render_input_signal(channel_to_node[channel], 0, start, samples)
 
 
-class MonoToSterioData(RouterComponentData):
+class MonoToStereoData(RouterComponentData):
 
     def create_component_renderer(self):
         return MonoToStereoRenderer()
