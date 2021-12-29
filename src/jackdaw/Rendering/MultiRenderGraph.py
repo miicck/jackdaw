@@ -1,13 +1,10 @@
 import time
-
 import numpy as np
-
+import multiprocessing as mp
+from typing import Dict, Tuple, Any, List, Union
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
-import multiprocessing as mp
-from typing import Dict, Tuple, Any, List, Union
-import numpy
 from jackdaw.UI.RouterComponents.MasterOutput import MasterOutputData
 
 # Typedefs
@@ -20,10 +17,7 @@ class MultiRenderGraph(Singleton):
     def __init__(self):
         Singleton.__init__(self)
         self._render_results: Dict[NodeKey, Dict[int, np.ndarray]] = dict()
-
-        data.router_components.add_on_change_listener(self.recalculate_routes)
         data.routes.add_on_change_listener(self.recalculate_routes)
-
         self.recalculate_routes()
 
     def render_master(self, start: int, samples: int):
@@ -90,7 +84,9 @@ class MultiRenderGraph(Singleton):
                         node_inputs[to_key[1]] = []
                     node_inputs[to_key[1]].append(from_key)
 
-            args = (key, node_inputs, render_results,)
+            comp_data = data.router_components[key[0]].component_data
+            renderer = comp_data.create_component_renderer()
+            args = (key, node_inputs, render_results, renderer)
             target = MultiRenderGraph.render_worker
             proc = mp.Process(target=target, args=args)
             proc.start()
@@ -107,7 +103,7 @@ class MultiRenderGraph(Singleton):
 
     @staticmethod
     def render_worker(key: NodeKey, node_inputs: Dict[str, List[NodeKey]],
-                      render_results: RenderResults):
+                      render_results: RenderResults, renderer: ComponentRenderer):
 
         # The result type stored in the render results dict
         RenderResult = Dict[int, np.array]
@@ -138,10 +134,6 @@ class MultiRenderGraph(Singleton):
                     else:
                         node_result[channel] += result[channel]
             node_results[node] = node_result
-
-        # Create the renderer for this node
-        component_data = data.router_components[key[0]].component_data
-        renderer: ComponentRenderer = component_data.create_component_renderer()
 
         # Perform the render
         render: RenderResult = renderer.render(key[1], 0, node_results)

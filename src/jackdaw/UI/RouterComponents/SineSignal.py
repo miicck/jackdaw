@@ -34,7 +34,7 @@ class SineSignalRenderer(ComponentRenderer):
 
         # Render a sine signal
         ts: np.ndarray = self.sample_range_to_times(0, 256)
-        return {0: np.sin(ts * np.pi * 2 * 440)}
+        return {0: 0.5 - 0.5 * np.cos(ts * np.pi * 2 * 440)}
 
 
 class SineSignal(RouterComponent):

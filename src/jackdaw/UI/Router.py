@@ -110,10 +110,7 @@ class Router(Gtk.Window, Singleton):
                    r.to_component.value in data.router_components
 
         # Remove invalid routes
-        invalid_routes = [r for r in data.routes if not route_valid(r)]
-        for r in invalid_routes:
-            data.routes.remove(r)
-
+        data.routes.remove([r for r in data.routes if not route_valid(r)])
         self.surface.show_all()
 
     def on_routes_change(self):

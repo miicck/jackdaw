@@ -111,6 +111,12 @@ class RouterComponent(Gtk.Grid):
         context.rectangle(0, 0, width, height)
         context.fill()
 
+        font_size = 3 * height // 4
+        context.set_source_rgb(0.0, 0.0, 0.0)
+        context.set_font_size(font_size)
+        context.move_to(1, font_size)
+        context.show_text(f"{self.id}")
+
     ##############
     # PROPERTIES #
     ##############

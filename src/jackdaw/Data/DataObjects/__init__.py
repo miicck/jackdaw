@@ -1,4 +1,4 @@
-from typing import Type, Any, Generic, TypeVar, Callable, Iterator
+from typing import Type, Any, Generic, TypeVar, Callable, Iterator, Iterable, Union
 from abc import ABC
 import json
 
@@ -314,14 +314,20 @@ class DataObjectSet(DataObject, Generic[ValType], HasOnChangeListeners):
         self._data.add(val)
         self.invoke_on_change_listeners()
 
-    def remove(self, val: ValType):
+    def remove(self, val: Union[ValType, Iterable[ValType]]):
         """
         Remove a DataObject from the set.
         :param val: Value to remove.
         :return: None
         """
-        val = DataObject.try_cast(val, self._value_type)
-        self._data.remove(val)
+
+        if isinstance(val, Iterable):
+            for v in val:
+                v = DataObject.try_cast(v, self._value_type)
+                self._data.remove(v)
+        else:
+            val = DataObject.try_cast(val, self._value_type)
+            self._data.remove(val)
         self.invoke_on_change_listeners()
 
     def serialize(self) -> dict:
