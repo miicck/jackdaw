@@ -13,7 +13,7 @@ class MonoToStereo(RouterComponent):
         self.add_input_node("Left")
         self.add_input_node("Right")
         self.add_output_node("Out")
-        self.content = Gtk.Label(label="Mono to Stereo")
+        self.content = Gtk.Label(label="Mono\nTo\nStereo")
 
 
 class MonoToStereoRenderer(ComponentRenderer):
