@@ -1,10 +1,9 @@
 import time
-
+import traceback
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
 import multiprocessing as mp
 import numpy as np
-from jackdaw.Session import session_close_method
 from typing import NamedTuple, Set, Dict, List, Tuple, Union
 from functools import cmp_to_key
 from jackdaw.Data.ProjectData import RouterComponentData
@@ -24,9 +23,8 @@ class Route(NamedTuple):
     to_node: Node
 
 
-# The rendered values of a node
-class RenderResult(NamedTuple):
-    signal: np.ndarray
+# A render result is a dictionary mapping channels to signals
+RenderResult = Dict[int, np.ndarray]
 
 
 # Contains process-safe information
@@ -34,6 +32,9 @@ class RenderResult(NamedTuple):
 class RenderQueue:
 
     def __init__(self):
+        self.kill_switch = mp.Queue()
+        self.kill_switch.put(False)
+
         self.queue = mp.Queue()
         self.queue.put([])
 
@@ -52,21 +53,26 @@ class PriorityRenderer(Singleton):
     def __init__(self):
         Singleton.__init__(self)
 
+        # Initialize the set of routes amd the render queue
         self._routes: Set[Route] = set()
         self._queue = RenderQueue()
 
         # Create render processes
-        self.render_processes: List[mp.Process] = []
         for n in range(mp.cpu_count()):
-            args = (self._queue,)
-            p = mp.Process(target=PriorityRenderer.render_loop, args=args)
+            p = mp.Process(target=PriorityRenderer.render_loop, args=(self._queue,))
             p.start()
-            self.render_processes.append(p)
 
         data.routes.add_on_change_listener(self.recalculate_routes)
         self.recalculate_routes()
 
     def render_master(self, start: int, samples: int) -> Tuple[np.ndarray, np.ndarray]:
+
+        # Wait for render queue
+        queue = [None]
+        while len(queue) > 0:
+            queue = self._queue.queue.get()
+            self._queue.queue.put(queue)
+            time.sleep(0.01)
 
         master_ids: Set[int] = set()
         for comp_id in data.router_components:
@@ -91,8 +97,10 @@ class PriorityRenderer(Singleton):
             if n_res is None:
                 continue
             for i, res in enumerate(channel_res):
+                if not i in n_res:
+                    continue
                 if res is None:
-                    channel_res[i] = n_res[i]
+                    channel_res[i] = np.array(n_res[i])
                 else:
                     channel_res[i] += n_res[i]
 
@@ -189,6 +197,10 @@ class PriorityRenderer(Singleton):
         # Update self
         self._routes = routes
 
+    def on_clear_singleton_instance(self):
+        self._queue.kill_switch.get()
+        self._queue.kill_switch.put(True)
+
     ################
     # STATIC STUFF #
     ################
@@ -268,15 +280,16 @@ class PriorityRenderer(Singleton):
         return downstream_nodes
 
     @staticmethod
-    @session_close_method
-    def close():
-        for p in PriorityRenderer.instance().render_processes:
-            p.kill()
-
-    @staticmethod
     def render_loop(queue: RenderQueue):
 
         while True:
+
+            killed = queue.kill_switch.get()
+            queue.kill_switch.put(killed)
+            if killed:
+                break
+
+            time.sleep(0.01)
 
             # Get the next node to render
             to_render: List[Node] = queue.queue.get()
@@ -285,6 +298,8 @@ class PriorityRenderer(Singleton):
 
             if node is not None:
                 PriorityRenderer.node_render_loop(node, queue)
+
+        print("Render process finished")
 
     @staticmethod
     def node_render_loop(node: Node, queue: RenderQueue):
