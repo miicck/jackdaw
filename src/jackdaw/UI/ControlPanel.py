@@ -3,7 +3,7 @@ from jackdaw.UI.Router import Router
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.TimeControl import TimeControl
 from jackdaw.Utils.Singleton import Singleton
-from jackdaw.Rendering.PlotRender import plot_render, plot_multi_render, plot_fragment_render
+from jackdaw.Rendering.PlotRender import plot_render, plot_multi_render, plot_fragment_render, plot_priority_render
 
 
 class ControlPanel(Gtk.Window, Singleton):
@@ -54,5 +54,9 @@ class ControlPanel(Gtk.Window, Singleton):
         fragment_plot_button = Gtk.Button(label="Plot FragmentRender")
         fragment_plot_button.connect("clicked", lambda e: plot_fragment_render(0, 1000))
         buttons.add(fragment_plot_button)
+
+        pri_plot_button = Gtk.Button(label="Plot PriorityRender")
+        pri_plot_button.connect("clicked", lambda e: plot_priority_render(0, 1000))
+        buttons.add(pri_plot_button)
 
         self.show_all()

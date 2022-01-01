@@ -27,6 +27,25 @@ class MonoToStereoRenderer(ComponentRenderer):
 
     def render(self, output_node: str, channel: int,
                input_node_signals: Dict[str, Dict[int, np.ndarray]]) -> Dict[int, np.ndarray]:
+
+        if len(input_node_signals) == 0:
+            raise Exception("Tried to render mono to stereo with no inputs!")
+
+        if len(input_node_signals) == 1:
+            if "Left" in input_node_signals:
+                left = input_node_signals["Left"][0]
+                return {
+                    0: left,
+                    1: np.zeros(len(left))
+                }
+
+            if "Right" in input_node_signals:
+                right = input_node_signals["Right"][0]
+                return {
+                    0: np.zeros(len(right)),
+                    1: right
+                }
+
         return {
             0: input_node_signals["Left"][0],
             1: input_node_signals["Right"][0]
