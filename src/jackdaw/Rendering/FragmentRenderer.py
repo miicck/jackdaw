@@ -1,16 +1,24 @@
+import time
+
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
 import numpy as np
 import multiprocessing as mp
-from typing import Set, Tuple, NamedTuple, Dict, Type
+from typing import Set, Tuple, NamedTuple, Dict, Type, Union, List
 from collections import namedtuple
+from queue import LifoQueue
 
-# Typedefs
 
 # A node is a pair (component id, node name)
-Node = namedtuple("Node", "id node")
+class Node(NamedTuple):
+    id: int
+    node: str
 
-Route = namedtuple("Route", "from_node to_node")
+
+# A route connects two nodes
+class Route(NamedTuple):
+    from_node: Node
+    to_node: Node
 
 
 class FragmentRenderer(Singleton):
@@ -132,12 +140,104 @@ class FragmentRenderer(Singleton):
         return {n for n in self._renderers if isinstance(self._renderers[n], InputRenderer)}
 
 
+class RenderBlock(NamedTuple):
+    node: Node
+    block: int
+    channel: int
+
+
+class RenderQueue:
+
+    def __init__(self):
+        self.to_render: List[RenderBlock] = []
+        self.rendered: Dict[RenderBlock, np.ndarray] = dict()
+
+
+render_processes = []
+
+
+def start_render_queue():
+    global render_processes
+    render_queue = mp.Queue()
+    render_queue.put(RenderQueue())
+
+    for n in range(mp.cpu_count()):
+        args = (render_queue,)
+        p = mp.Process(target=render_worker, args=args)
+        p.start()
+        render_processes.append(p)
+
+
+def render_worker(render_queue: mp.Queue):
+    q: RenderQueue = render_queue.get()
+    if len(q.to_render) == 0:
+        # Nothing to render
+        render_queue.put(q)
+        return
+
+    # Get the last RenderBlock queued
+    # (last because this is the least likely to have dependencies)
+    block = q.to_render.pop(-1)
+
+
+# Identifier of a single block of rendered signal
+class RenderBlock(NamedTuple):
+    block: int
+    channel: int
+
+
+RenderResult = Union[None, np.array]
+
+
+class RenderQueue:
+
+    def __init__(self):
+        self.to_render: List[RenderBlock] = []
+        self.rendered: Dict[RenderBlock, np.ndarray] = dict()
+
+    def try_pop(self, block: RenderBlock):
+        if block in self.rendered:
+            return self.rendered.pop(block)
+        return None
+
+
 class NodeRenderer:
+    BLOCK_SIZE = 256
 
     def __init__(self, node: Node, frag_renderer: FragmentRenderer):
         self.node = node
         self.frag_renderer = frag_renderer
+
+        # Queue of blocks to render
+        self.render_queue = mp.Queue()
+        self.render_queue.put(RenderQueue())
+
+        # Will contain rendered blocks
+        self.rendered: Dict[RenderBlock, np.ndarray] = dict()
+
         print(f"{self.__class__.__name__} {self.node} created")
+
+    def get_block(self, block: RenderBlock) -> Union[np.ndarray, None]:
+
+        # Return previously-rendered block
+        if block in self.rendered:
+            return self.rendered[block]
+
+        # Attempt to get rendered block from queue
+        rq: RenderQueue = self.render_queue.get()
+        render = rq.try_pop(block)
+        if render is None:
+            # Ensure that rendering of
+            # this block is queued
+            if block not in rq.to_render:
+                rq.to_render.add(block)
+        else:
+            # Render has succeeded
+            # Save to local rendered blocks
+            self.rendered[block] = render
+
+        self.render_queue.put(rq)
+        return render
 
     def invalidate(self):
         print(f"{self.__class__.__name__} {self.node} invalidated")
@@ -165,6 +265,30 @@ class OutputRenderer(NodeRenderer):
                 input_renderer = self.frag_renderer.get_renderer(r.to_node)
                 assert isinstance(input_renderer, InputRenderer)
                 self.inputs[r.to_node] = input_renderer
+
+    @staticmethod
+    def render_loop(render_queue: mp.Queue, inputs: Dict[Node, mp.Queue]):
+
+        q: RenderQueue = render_queue.get()
+        if len(q.to_render) == 0:
+            # Nothing to do
+            render_queue.put(q)
+            return
+
+        # Get a block to render
+        block = q.to_render.pop(-1)
+        render_queue.put(q)
+
+        input_results: Dict[Node, RenderResult] = dict()
+        for node in inputs:
+            input_results[node] = None
+
+        # Wait for any required inputs to be rendered
+        while any(input_results[n] is None for n in input_results):
+            time.sleep(0.01)
+            for n in input_results:
+                input_results[n] = inputs[n].get()
+                inputs[n].put(input_results[n])
 
 
 class InputRenderer(NodeRenderer):
