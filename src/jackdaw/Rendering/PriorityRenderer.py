@@ -125,9 +125,21 @@ class PriorityRenderer(Singleton):
         # Work out nodes that have been added/removed
         added_nodes = nodes - old_nodes
         removed_nodes = old_nodes - nodes
+        added_routes = routes - self._routes
+        removed_routes = self._routes - routes
 
         # Work out nodes that have been invalidated by this change
         invalidated_nodes: Set[Node] = set()
+
+        # Nodes that are downstream of new routes are invalidated
+        for route in added_routes:
+            invalidated_nodes = invalidated_nodes.union(
+                PriorityRenderer.downstream_nodes(route.to_node, children))
+
+        # Nodes that were downstream of deleted routes are invalidated
+        for route in removed_routes:
+            invalidated_nodes = invalidated_nodes.union(
+                PriorityRenderer.downstream_nodes(route.to_node, old_children))
 
         # Nodes that are downstream of new nodes are invalidated
         for node in added_nodes:
