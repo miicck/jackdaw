@@ -1,14 +1,15 @@
 import multiprocessing as mp
 from typing import List, Union, Dict, Set
 from jackdaw.Rendering.Typedefs import *
-from jackdaw.Rendering.Signal import Signal
+from jackdaw.Utils.Singleton import Singleton
 
 
 # Contains process-safe information
 # relating to the rendering queue.
-class RenderQueue:
+class RenderQueue(Singleton):
 
     def __init__(self):
+        Singleton.__init__(self)
         self.kill_switch = mp.Queue()
         self.kill_switch.put(False)
 

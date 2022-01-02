@@ -21,7 +21,7 @@ class PriorityRenderer(Singleton):
 
         # Initialize the set of routes amd the render queue
         self._routes: Set[Route] = set()
-        self._queue = RenderQueue()
+        self._queue = RenderQueue.instance()
 
         # Create render processes
         self._render_processes: List[mp.Process] = []
