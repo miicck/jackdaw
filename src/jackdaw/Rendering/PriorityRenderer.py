@@ -1,15 +1,27 @@
 import time
+import numpy as np
 import multiprocessing as mp
 from functools import cmp_to_key
-from typing import Set, List, Tuple
+from typing import Set, List, Tuple, NamedTuple, Dict, Union
 
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
 from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.UI.RouterComponents.MasterOutput import MasterOutputData
-from jackdaw.Rendering.Typedefs import *
 from jackdaw.Rendering.Signal import Signal
+
+
+# A node is a pair (component id, node name)
+class Node(NamedTuple):
+    id: int
+    node: str
+
+
+# A route connects two nodes
+class Route(NamedTuple):
+    from_node: Node
+    to_node: Node
 
 
 # Contains process-safe information
@@ -26,11 +38,29 @@ class RenderQueue:
         self.results = mp.Queue()
         self.results.put(dict())
 
-        self.parents = mp.Queue()
-        self.parents.put(dict())
+        self._parents = mp.Queue()
+        self._parents.put(dict())
 
         self.node_types = mp.Queue()
         self.node_types.put(dict())
+
+    @property
+    def parents(self) -> Dict[Node, Set[Node]]:
+        par = self._parents.get()
+        self._parents.put(par)
+
+        for n in par:
+            assert n not in par[n]
+
+        return par
+
+    @parents.setter
+    def parents(self, par: Dict[Node, Set[Node]]):
+        self._parents.get()
+        self._parents.put(par)
+
+        for n in par:
+            assert n not in par[n]
 
     @property
     def killed(self):
@@ -56,7 +86,9 @@ class PriorityRenderer(Singleton):
         # Create render processes
         self._render_processes: List[mp.Process] = []
         for n in range(mp.cpu_count()):
-            p = mp.Process(target=PriorityRenderer.render_loop, args=(self._queue,))
+            p = mp.Process(target=PriorityRenderer.render_loop,
+                           args=(self._queue,),
+                           name=f"Renderer {len(self._render_processes)}")
             p.start()
             self._render_processes.append(p)
 
@@ -163,8 +195,7 @@ class PriorityRenderer(Singleton):
         self._queue.node_types.put(ntypes)
 
         # Update parents
-        self._queue.parents.get()
-        self._queue.parents.put(parents)
+        self._queue.parents = parents
 
         # Update render queue
         self._queue.queue.get()
@@ -281,11 +312,12 @@ class PriorityRenderer(Singleton):
     @staticmethod
     def node_render_loop(node: Node, queue: RenderQueue):
 
+        print(f"Started rendering {node.id}.{node.node}")
+
         while not queue.killed:
 
             # Get parents of the node to render
-            all_parents = queue.parents.get()
-            queue.parents.put(all_parents)
+            all_parents = queue.parents
 
             if node not in all_parents:
                 return  # This node no longer exists, so no need to render
@@ -351,10 +383,7 @@ class PriorityRenderer(Singleton):
 
             # Render
             input_results = {p.node: parent_results[p] for p in parent_results}
-            result = Signal()
-            render = renderer.render(node.node, 0, input_results)
-            for k in render:
-                result[k] = render[k]
+            result = renderer.render(node.node, 0, input_results)
 
         assert result is not None
 

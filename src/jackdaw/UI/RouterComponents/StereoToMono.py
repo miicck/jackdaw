@@ -4,6 +4,7 @@ from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.Gi import Gtk
 from typing import Union, Dict
 import numpy as np
+from jackdaw.Rendering.Signal import Signal
 
 
 class StereoToMono(RouterComponent):
@@ -18,12 +19,16 @@ class StereoToMono(RouterComponent):
 
 class StereoToMonoRenderer(ComponentRenderer):
 
-    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[np.ndarray, None]:
-        raise NotImplementedError()
+    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+        result = Signal()
+        if "In" not in inputs:
+            return result
 
-    def render(self, output_node: str, channel: int,
-               input_node_signals: Dict[str, Dict[int, np.ndarray]]) -> Dict[int, np.ndarray]:
-        raise NotImplementedError()
+        if output_node == "Left":
+            result[0] = inputs["In"][0]
+        elif output_node == "Right":
+            result[0] = inputs["In"][1]
+        return result
 
 
 class StereoToMonoData(RouterComponentData):

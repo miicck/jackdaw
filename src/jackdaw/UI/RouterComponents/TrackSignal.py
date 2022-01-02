@@ -4,8 +4,6 @@ from jackdaw.Data import data
 from jackdaw.Data.DataObjects import *
 from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
-from typing import Union
-import numpy
 
 
 class TrackSignalData(RouterComponentData):
@@ -22,9 +20,7 @@ class TrackSignalData(RouterComponentData):
 
 
 class TrackSignalRenderer(ComponentRenderer):
-
-    def render_output_signal(self, node: str, channel: int, start: int, samples: int) -> Union[numpy.ndarray, None]:
-        raise NotImplementedError()
+    pass
 
 
 class TrackSignal(RouterComponent):

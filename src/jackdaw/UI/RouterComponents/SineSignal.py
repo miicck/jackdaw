@@ -5,6 +5,7 @@ from jackdaw.Gi import Gtk
 import cairo
 import numpy as np
 from typing import Dict
+from jackdaw.Rendering.Signal import Signal
 
 
 class SineSignalData(RouterComponentData):
@@ -18,23 +19,12 @@ class SineSignalData(RouterComponentData):
 
 class SineSignalRenderer(ComponentRenderer):
 
-    def render_output_signal(self, node: str, channel: int, start: int, samples: int):
-        # Only render the output node on channel 0
-        if node != "Out" or channel != 0:
-            return None
-
+    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
         # Render a sine signal
-        ts: np.ndarray = self.sample_range_to_times(start, samples)
-        return np.sin(ts * np.pi * 2 * 440)
-
-    def render(self, output_node: str, channel: int,
-               input_node_signals: Dict[str, Dict[int, np.ndarray]]) -> Dict[int, np.ndarray]:
-        # Ensure we don't have any input signals
-        assert len(input_node_signals) == 0
-
-        # Render a sine signal
+        result = Signal()
         ts: np.ndarray = self.sample_range_to_times(0, 256)
-        return {0: 0.5 - 0.5 * np.cos(ts * np.pi * 2 * 440)}
+        result[0] = 0.5 - 0.5 * np.cos(ts * np.pi * 2 * 440)
+        return result
 
 
 class SineSignal(RouterComponent):
