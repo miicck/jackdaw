@@ -323,8 +323,10 @@ class Renderer(Singleton):
                                      Renderer.CHUNK_SIZE, input_results)
 
             if result.samples != Renderer.CHUNK_SIZE:
-                print(renderer)
-            assert result.samples == Renderer.CHUNK_SIZE
+                raise Exception(f"Renderer of type \"{renderer.__class__.__name__}\" "
+                                f"rendered the wrong number of samples! "
+                                f"Rendered {result.samples}, expected "
+                                f"{Renderer.CHUNK_SIZE}")
 
             results = queue.results.get()
             if node not in results:
