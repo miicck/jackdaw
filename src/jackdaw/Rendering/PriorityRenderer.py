@@ -1,30 +1,15 @@
 import time
-import traceback
+import multiprocessing as mp
+from functools import cmp_to_key
+from typing import Set, List, Tuple
+
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
-import multiprocessing as mp
-import numpy as np
-from typing import NamedTuple, Set, Dict, List, Tuple, Union
-from functools import cmp_to_key
 from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.UI.RouterComponents.MasterOutput import MasterOutputData
-
-
-# A node is a pair (component id, node name)
-class Node(NamedTuple):
-    id: int
-    node: str
-
-
-# A route connects two nodes
-class Route(NamedTuple):
-    from_node: Node
-    to_node: Node
-
-
-# A render result is a dictionary mapping channels to signals
-RenderResult = Dict[int, np.ndarray]
+from jackdaw.Rendering.Typedefs import *
+from jackdaw.Rendering.Signal import Signal
 
 
 # Contains process-safe information
@@ -47,6 +32,17 @@ class RenderQueue:
         self.node_types = mp.Queue()
         self.node_types.put(dict())
 
+    @property
+    def killed(self):
+        killed = self.kill_switch.get()
+        self.kill_switch.put(killed)
+        return killed
+
+    @killed.setter
+    def killed(self, val: bool):
+        self.kill_switch.get()
+        self.kill_switch.put(val)
+
 
 class PriorityRenderer(Singleton):
 
@@ -58,9 +54,11 @@ class PriorityRenderer(Singleton):
         self._queue = RenderQueue()
 
         # Create render processes
+        self._render_processes: List[mp.Process] = []
         for n in range(mp.cpu_count()):
             p = mp.Process(target=PriorityRenderer.render_loop, args=(self._queue,))
             p.start()
+            self._render_processes.append(p)
 
         data.routes.add_on_change_listener(self.recalculate_routes)
         self.recalculate_routes()
@@ -88,29 +86,8 @@ class PriorityRenderer(Singleton):
         all_results = self._queue.results.get()
         self._queue.results.put(all_results)
 
-        channel_res = [None, None]
-
-        for n in master_nodes:
-            if n not in all_results:
-                continue
-            n_res = all_results[n]
-            if n_res is None:
-                continue
-            for i, res in enumerate(channel_res):
-                if not i in n_res:
-                    continue
-                if res is None:
-                    channel_res[i] = np.array(n_res[i])
-                else:
-                    channel_res[i] += n_res[i]
-
-        res_len = 1
-        for res in channel_res:
-            if isinstance(res, np.ndarray):
-                res_len = len(res)
-                break
-
-        return tuple(c if c is not None else np.zeros(res_len) for c in channel_res)
+        result = Signal.sum(all_results[n] for n in master_nodes if n in all_results)
+        return result[0], result[1]
 
     def recalculate_routes(self):
 
@@ -198,8 +175,9 @@ class PriorityRenderer(Singleton):
         self._routes = routes
 
     def on_clear_singleton_instance(self):
-        self._queue.kill_switch.get()
-        self._queue.kill_switch.put(True)
+        self._queue.killed = True
+        for p in self._render_processes:
+            p.join()
 
     ################
     # STATIC STUFF #
@@ -279,15 +257,14 @@ class PriorityRenderer(Singleton):
 
         return downstream_nodes
 
+    #####################
+    # RENDERING PROCESS #
+    #####################
+
     @staticmethod
     def render_loop(queue: RenderQueue):
 
-        while True:
-
-            killed = queue.kill_switch.get()
-            queue.kill_switch.put(killed)
-            if killed:
-                break
+        while not queue.killed:
 
             time.sleep(0.01)
 
@@ -304,7 +281,7 @@ class PriorityRenderer(Singleton):
     @staticmethod
     def node_render_loop(node: Node, queue: RenderQueue):
 
-        while True:
+        while not queue.killed:
 
             # Get parents of the node to render
             all_parents = queue.parents.get()
@@ -318,7 +295,7 @@ class PriorityRenderer(Singleton):
             queue.results.put(all_results)
 
             # Get results for the parents
-            parent_results: Dict[Node, Union[RenderResult, None]] = dict()
+            parent_results: Dict[Node, Union[Signal, None]] = dict()
             for p in all_parents[node]:
                 if p in all_results:
                     parent_results[p] = all_results[p]
@@ -337,7 +314,7 @@ class PriorityRenderer(Singleton):
 
     @staticmethod
     def render_node(node: Node,
-                    parent_results: Dict[Node, Union[RenderResult, None]],
+                    parent_results: Dict[Node, Signal],
                     queue: RenderQueue):
 
         # Ensure parents are properly rendered
@@ -350,12 +327,12 @@ class PriorityRenderer(Singleton):
             return  # Node has been deleted, no need to render
 
         dtype, inout = ntypes[node].split(".")
-        result: Dict[int, np.ndarray] = None
+        result: Union[Signal, None] = None
 
         if inout == "input":
 
             # Simply sum contributions to input nodes
-            result = dict()
+            result = Signal()
             for p in parent_results:
                 pres = parent_results[p]
                 for channel in pres:
@@ -366,7 +343,7 @@ class PriorityRenderer(Singleton):
 
         else:
             # Create the renderer
-            renderer: ComponentRenderer = None
+            renderer: Union[ComponentRenderer, None] = None
             for c in RouterComponentData.__subclasses__():
                 if c.__name__ == dtype:
                     renderer = c().create_component_renderer()
@@ -374,7 +351,10 @@ class PriorityRenderer(Singleton):
 
             # Render
             input_results = {p.node: parent_results[p] for p in parent_results}
-            result = renderer.render(node.node, 0, input_results)
+            result = Signal()
+            render = renderer.render(node.node, 0, input_results)
+            for k in render:
+                result[k] = render[k]
 
         assert result is not None
 
