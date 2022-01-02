@@ -14,7 +14,7 @@ from jackdaw.Rendering.Typedefs import *
 from jackdaw.Rendering.RenderQueue import RenderQueue
 
 
-class PriorityRenderer(Singleton):
+class Renderer(Singleton):
 
     def __init__(self):
         Singleton.__init__(self)
@@ -26,7 +26,7 @@ class PriorityRenderer(Singleton):
         # Create render processes
         self._render_processes: List[mp.Process] = []
         for n in range(mp.cpu_count()):
-            p = mp.Process(target=PriorityRenderer.render_loop,
+            p = mp.Process(target=Renderer.render_loop,
                            args=(self._queue,),
                            name=f"Renderer {len(self._render_processes)}")
             p.start()
@@ -73,8 +73,8 @@ class PriorityRenderer(Singleton):
         old_nodes = {r.from_node for r in self._routes}.union({r.to_node for r in self._routes})
 
         # Work out the parent/child structure
-        parents, children = PriorityRenderer.get_parent_dictionary(routes)
-        old_parents, old_children = PriorityRenderer.get_parent_dictionary(self._routes)
+        parents, children = Renderer.get_parent_dictionary(routes)
+        old_parents, old_children = Renderer.get_parent_dictionary(self._routes)
 
         # Work out nodes that have been added/removed
         added_nodes = nodes - old_nodes
@@ -83,31 +83,32 @@ class PriorityRenderer(Singleton):
         removed_routes = self._routes - routes
 
         # Work out nodes that have been invalidated by this change
-        invalidated_nodes: Set[Node] = set()
+        invalidated_nodes: Set[Node] = removed_nodes.union(added_nodes)
 
         # Nodes that are downstream of new routes are invalidated
         for route in added_routes:
             invalidated_nodes = invalidated_nodes.union(
-                PriorityRenderer.downstream_nodes(route.to_node, children))
+                Renderer.downstream_nodes(route.to_node, children))
 
         # Nodes that were downstream of deleted routes are invalidated
         for route in removed_routes:
             invalidated_nodes = invalidated_nodes.union(
-                PriorityRenderer.downstream_nodes(route.to_node, old_children))
+                Renderer.downstream_nodes(route.to_node, old_children))
 
         # Nodes that are downstream of new nodes are invalidated
         for node in added_nodes:
             invalidated_nodes = invalidated_nodes.union(
-                PriorityRenderer.downstream_nodes(node, children))
+                Renderer.downstream_nodes(node, children))
 
         # Nodes that were downstream of deleted nodes are invalidated
         for node in removed_nodes:
             invalidated_nodes = invalidated_nodes.union(
-                PriorityRenderer.downstream_nodes(node, old_children))
+                Renderer.downstream_nodes(node, old_children))
 
         # Nodes that are currently in the render queue are invalidated
         # (so that previously-queued render jobs are not forgotten about)
         invalidated_nodes = invalidated_nodes.union(self._queue.queue)
+        self._queue.queue = []  # Clear the queue
 
         # Remove any invalid results
         results = self._queue.results.get()
@@ -129,7 +130,7 @@ class PriorityRenderer(Singleton):
             ntypes[n] = f"{dtypes[n.id]}.input"
 
         # Update render queue
-        queue = [n for n in PriorityRenderer.render_order(parents) if n in invalidated_nodes]
+        queue = [n for n in Renderer.render_order(parents) if n in invalidated_nodes]
 
         self._queue.parents = parents
         self._queue.queue = queue
@@ -184,12 +185,14 @@ class PriorityRenderer(Singleton):
         order.sort(key=lambda n: len(parents[n]))
 
         def dependence_compare(node_left, node_right):
-            if node_left in PriorityRenderer.upstream_nodes(node_right, parents):
+            if node_left in Renderer.upstream_nodes(node_right, parents):
                 return -1
-            if node_right in PriorityRenderer.upstream_nodes(node_left, parents):
+            if node_right in Renderer.upstream_nodes(node_left, parents):
                 return 1
             return 0
 
+        # Sort by dependence, so that nodes appear
+        # after all other nodes that they depend upon
         order.sort(key=cmp_to_key(dependence_compare))
         return order
 
@@ -235,7 +238,7 @@ class PriorityRenderer(Singleton):
             # Get the next node to render
             node = queue.dequeue()
             if node is not None:
-                PriorityRenderer.node_render_loop(node, queue)
+                Renderer.node_render_loop(node, queue)
 
         print("Render process finished")
 
@@ -271,7 +274,7 @@ class PriorityRenderer(Singleton):
                 continue
 
             # Render the node
-            PriorityRenderer.render_node(node, parent_results, queue)
+            Renderer.render_node(node, parent_results, queue)
             break
 
     @staticmethod
@@ -294,14 +297,7 @@ class PriorityRenderer(Singleton):
         if inout == "input":
 
             # Simply sum contributions to input nodes
-            result = Signal()
-            for p in parent_results:
-                pres = parent_results[p]
-                for channel in pres:
-                    if channel in result:
-                        result[channel] += pres[channel]
-                    else:
-                        result[channel] = pres[channel]
+            result = Signal.sum(parent_results[p] for p in parent_results)
 
         else:
             # Create the renderer

@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from jackdaw.Rendering.PriorityRenderer import PriorityRenderer
+from jackdaw.Rendering.Renderer import Renderer
 
 
 def plot_left_right(left, right):
@@ -11,4 +11,4 @@ def plot_left_right(left, right):
 
 
 def plot_priority_render(start: int, samples: int):
-    plot_left_right(*PriorityRenderer.instance().render_master(start, samples))
+    plot_left_right(*Renderer.instance().render_master(start, samples))
