@@ -2,8 +2,7 @@ from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.Gi import Gtk
-from typing import Union, Dict
-import numpy as np
+from typing import Dict
 from jackdaw.Rendering.Signal import Signal
 
 
@@ -19,7 +18,7 @@ class StereoToMono(RouterComponent):
 
 class StereoToMonoRenderer(ComponentRenderer):
 
-    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+    def render(self, output_node: str, start: int, samples: int, inputs: Dict[str, Signal]) -> Signal:
         result = Signal()
         if "In" not in inputs:
             return result

@@ -1,3 +1,5 @@
+import numpy as np
+
 from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.UI.RouterComponent import RouterComponent
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
@@ -18,12 +20,18 @@ class MonoToStereo(RouterComponent):
 
 class MonoToStereoRenderer(ComponentRenderer):
 
-    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+    def render(self, output_node: str, start: int, samples: int, inputs: Dict[str, Signal]) -> Signal:
         result = Signal()
         if "Left" in inputs:
-            result[0] = inputs["Left"][0]
+            result[0] = inputs["Left"][0][start: start + samples]
+        else:
+            result[0] = np.zeros(samples)
+
         if "Right" in inputs:
-            result[1] = inputs["Right"][0]
+            result[1] = inputs["Right"][0][start: start + samples]
+        else:
+            result[1] = np.zeros(samples)
+
         return result
 
 

@@ -45,6 +45,17 @@ class Signal:
         assert isinstance(other, Signal)
         return self + other
 
+    def insert(self, other: 'Signal', start: int):
+        assert set(self._data) == set(other._data)
+
+        length = max(self.samples, start + other.samples)
+
+        for i in self._data:
+            tmp = self._data[i]
+            self._data[i] = np.zeros(length)
+            self._data[i][0: len(tmp)] = tmp
+            self._data[i][start: start + other.samples] = other._data[i]
+
     @property
     def samples(self) -> int:
         for channel in self._data:

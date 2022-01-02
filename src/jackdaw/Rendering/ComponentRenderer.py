@@ -7,7 +7,7 @@ from jackdaw.Rendering.Signal import Signal
 class ComponentRenderer(ABC):
 
     @abstractmethod
-    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+    def render(self, output_node: str, start: int, samples: int, inputs: Dict[str, Signal]) -> Signal:
         raise NotImplementedError()
 
     ################

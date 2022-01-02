@@ -133,8 +133,9 @@ class Renderer(Singleton):
         order = [n for n in Renderer.render_order(parents) if n in invalidated_nodes]
 
         self._queue.parents = parents
-        self._queue.node_order = order
         self._queue.node_types.put(ntypes)
+        self._queue.invalidate_after(0)
+        self._queue.node_order = order
 
         # Update self
         self._routes = routes
@@ -147,8 +148,6 @@ class Renderer(Singleton):
     ################
     # STATIC STUFF #
     ################
-
-    CHUNK_SIZE = 256  # How many samples for a chunk
 
     @staticmethod
     def get_parent_dictionary(routes: Set[Route]) -> \
@@ -230,6 +229,8 @@ class Renderer(Singleton):
     # RENDERING PROCESS #
     #####################
 
+    CHUNK_SIZE = 256  # How many samples for a chunk
+
     @staticmethod
     def render_loop(queue: RenderQueue):
 
@@ -298,14 +299,17 @@ class Renderer(Singleton):
             return  # Node has been deleted, no need to render
 
         dtype, inout = ntypes[node].split(".")
-        result: Union[Signal, None] = None
 
         if inout == "input":
 
             # Simply sum contributions to input nodes
             result = Signal.sum(parent_results[p] for p in parent_results)
+            results = queue.results.get()
+            results[node] = result
+            queue.results.put(results)
 
         else:
+
             # Create the renderer
             renderer: Union[ComponentRenderer, None] = None
             for c in RouterComponentData.__subclasses__():
@@ -315,13 +319,19 @@ class Renderer(Singleton):
 
             # Render
             input_results = {p.node: parent_results[p] for p in parent_results}
-            result = renderer.render(node.node, 0, input_results)
+            result = renderer.render(node.node, chunk * Renderer.CHUNK_SIZE,
+                                     Renderer.CHUNK_SIZE, input_results)
 
-        assert result is not None
+            if result.samples != Renderer.CHUNK_SIZE:
+                print(renderer)
+            assert result.samples == Renderer.CHUNK_SIZE
 
-        # Put the result back onto the queue
-        res = queue.results.get()
-        res[node] = result
-        queue.results.put(res)
+            results = queue.results.get()
+            if node not in results:
+                assert chunk == 0
+                results[node] = result
+            else:
+                results[node].insert(result, chunk * Renderer.CHUNK_SIZE)
+            queue.results.put(results)
 
         print(f"Rendered {node.id}.{node.node} ({dtype}.{inout}, chunk {chunk})")

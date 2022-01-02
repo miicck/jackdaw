@@ -19,10 +19,10 @@ class SawtoothSignalData(RouterComponentData):
 
 class SawtoothSignalRenderer(ComponentRenderer):
 
-    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+    def render(self, output_node: str, start: int, samples: int, inputs: Dict[str, Signal]) -> Signal:
         # Render a sine signal
         result = Signal()
-        ts: np.ndarray = self.sample_range_to_times(0, 256)
+        ts: np.ndarray = self.sample_range_to_times(start, samples)
         ts *= 440
         result[0] = ts - np.floor(ts)
         return result

@@ -19,10 +19,10 @@ class SineSignalData(RouterComponentData):
 
 class SineSignalRenderer(ComponentRenderer):
 
-    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+    def render(self, output_node: str, start: int, samples: int, inputs: Dict[str, Signal]) -> Signal:
         # Render a sine signal
         result = Signal()
-        ts: np.ndarray = self.sample_range_to_times(0, 256)
+        ts: np.ndarray = self.sample_range_to_times(start, samples)
         result[0] = 0.5 - 0.5 * np.cos(ts * np.pi * 2 * 440)
         return result
 

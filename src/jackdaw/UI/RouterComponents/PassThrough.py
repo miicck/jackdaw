@@ -18,7 +18,7 @@ class PassThroughData(RouterComponentData):
 
 class PassThroughRenderer(ComponentRenderer):
 
-    def render(self, output_node: str, channel: int, inputs: Dict[str, Signal]) -> Signal:
+    def render(self, output_node: str, start: int, samples: int, inputs: Dict[str, Signal]) -> Signal:
         if "In" in inputs:
             return inputs["In"]
         return Signal()

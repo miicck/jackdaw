@@ -23,7 +23,7 @@ class RenderQueue(Singleton):
         self._chunk_index.put(0)
 
         self._chunks_to_render = mp.Queue()
-        self._chunks_to_render.put(10)
+        self._chunks_to_render.put(2)
 
         self._parents = mp.Queue()
         self._parents.put(dict())
@@ -71,6 +71,10 @@ class RenderQueue(Singleton):
         self._chunk_index.put(chunk)
         self._node_index.put(index + 1)
         return chunk, order[index]
+
+    def invalidate_after(self, chunk: int):
+        self._chunk_index.get()
+        self._chunk_index.put(chunk)
 
     @property
     def node_order(self) -> List[Node]:
