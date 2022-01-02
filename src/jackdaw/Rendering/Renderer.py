@@ -38,7 +38,7 @@ class Renderer(Singleton):
     def render_master(self, start: int, samples: int) -> Tuple[np.ndarray, np.ndarray]:
 
         # Wait for render queue
-        while len(self._queue.queue) > 0:
+        while not self._queue.done:
             time.sleep(0.01)
 
         master_ids: Set[int] = set()
@@ -107,8 +107,8 @@ class Renderer(Singleton):
 
         # Nodes that are currently in the render queue are invalidated
         # (so that previously-queued render jobs are not forgotten about)
-        invalidated_nodes = invalidated_nodes.union(self._queue.queue)
-        self._queue.queue = []  # Clear the queue
+        invalidated_nodes = invalidated_nodes.union(self._queue.remaining)
+        self._queue.node_order = []  # Clear the queue
 
         # Remove any invalid results
         results = self._queue.results.get()
@@ -129,11 +129,11 @@ class Renderer(Singleton):
         for n in input_nodes:
             ntypes[n] = f"{dtypes[n.id]}.input"
 
-        # Update render queue
-        queue = [n for n in Renderer.render_order(parents) if n in invalidated_nodes]
+        # Update render order
+        order = [n for n in Renderer.render_order(parents) if n in invalidated_nodes]
 
         self._queue.parents = parents
-        self._queue.queue = queue
+        self._queue.node_order = order
         self._queue.node_types.put(ntypes)
 
         # Update self
@@ -236,7 +236,7 @@ class Renderer(Singleton):
             time.sleep(0.01)
 
             # Get the next node to render
-            node = queue.dequeue()
+            node = queue.next()
             if node is not None:
                 Renderer.node_render_loop(node, queue)
 

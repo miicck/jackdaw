@@ -10,5 +10,5 @@ def plot_left_right(left, right):
     plt.show()
 
 
-def plot_priority_render(start: int, samples: int):
+def plot_render(start: int, samples: int):
     plot_left_right(*Renderer.instance().render_master(start, samples))
