@@ -1,5 +1,5 @@
 import multiprocessing as mp
-from typing import List, Union, Dict, Set
+from typing import List, Union, Dict, Set, Tuple
 from jackdaw.Rendering.Typedefs import *
 from jackdaw.Utils.Singleton import Singleton
 
@@ -19,6 +19,12 @@ class RenderQueue(Singleton):
         self._node_index = mp.Queue()
         self._node_index.put(0)
 
+        self._chunk_index = mp.Queue()
+        self._chunk_index.put(0)
+
+        self._chunks_to_render = mp.Queue()
+        self._chunks_to_render.put(10)
+
         self._parents = mp.Queue()
         self._parents.put(dict())
 
@@ -28,16 +34,43 @@ class RenderQueue(Singleton):
         self.node_types = mp.Queue()
         self.node_types.put(dict())
 
-    def next(self) -> Union[Node, None]:
+    def next(self) -> Union[Tuple[Chunk, Node], None]:
+
+        # Order of nodes to render/index of node to render
         order = self.node_order
         index = self._node_index.get()
 
+        # Index beyond order array => we're done
         if index >= len(order):
             self._node_index.put(index)
             return None
-        else:
-            self._node_index.put(index + 1)
-            return order[index]
+
+        if index == len(order) - 1:  # Last node of the chunk
+
+            # Work out how many chunks we need to render
+            chunk_limit = self._chunks_to_render.get()
+            self._chunks_to_render.put(chunk_limit)
+
+            # Get the chunk we're currently rendering
+            chunk = self._chunk_index.get()
+
+            if chunk + 1 >= chunk_limit:
+                # All chunks rendered
+                self._chunk_index.put(chunk)
+                self._node_index.put(index + 1)
+                return chunk, order[index]
+
+            # Last node of this chunk, increment
+            # the chunk and go back no node index 0
+            self._chunk_index.put(chunk + 1)
+            self._node_index.put(0)
+            return chunk, order[index]
+
+        # Increment the node index
+        chunk = self._chunk_index.get()
+        self._chunk_index.put(chunk)
+        self._node_index.put(index + 1)
+        return chunk, order[index]
 
     @property
     def node_order(self) -> List[Node]:

@@ -1,5 +1,8 @@
 from typing import NamedTuple
 
+#  A chunk is just an integer chunk index
+Chunk = int
+
 
 # A node is a pair (component id, node name)
 class Node(NamedTuple):

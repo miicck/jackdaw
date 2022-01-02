@@ -148,6 +148,8 @@ class Renderer(Singleton):
     # STATIC STUFF #
     ################
 
+    CHUNK_SIZE = 256  # How many samples for a chunk
+
     @staticmethod
     def get_parent_dictionary(routes: Set[Route]) -> \
             Tuple[Dict[Node, Set[Node]], Dict[Node, Set[Node]]]:
@@ -236,16 +238,19 @@ class Renderer(Singleton):
             time.sleep(0.01)
 
             # Get the next node to render
-            node = queue.next()
-            if node is not None:
-                Renderer.node_render_loop(node, queue)
+            next = queue.next()
+            if next is None:
+                continue
+
+            chunk, node = next
+            Renderer.node_render_loop(chunk, node, queue)
 
         print("Render process finished")
 
     @staticmethod
-    def node_render_loop(node: Node, queue: RenderQueue):
+    def node_render_loop(chunk: Chunk, node: Node, queue: RenderQueue):
 
-        print(f"Started rendering {node.id}.{node.node}")
+        print(f"Started rendering {node.id}.{node.node} (chunk {chunk})")
 
         while not queue.killed:
 
@@ -274,11 +279,12 @@ class Renderer(Singleton):
                 continue
 
             # Render the node
-            Renderer.render_node(node, parent_results, queue)
+            Renderer.render_node(chunk, node, parent_results, queue)
             break
 
     @staticmethod
-    def render_node(node: Node,
+    def render_node(chunk: Chunk,
+                    node: Node,
                     parent_results: Dict[Node, Signal],
                     queue: RenderQueue):
 
@@ -318,4 +324,4 @@ class Renderer(Singleton):
         res[node] = result
         queue.results.put(res)
 
-        print(f"Rendered {node.id}.{node.node} ({dtype}.{inout})")
+        print(f"Rendered {node.id}.{node.node} ({dtype}.{inout}, chunk {chunk})")
