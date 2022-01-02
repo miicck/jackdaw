@@ -2,7 +2,7 @@ import time
 import numpy as np
 import multiprocessing as mp
 from functools import cmp_to_key
-from typing import Set, List, Tuple, NamedTuple, Dict, Union
+from typing import Set, List, Tuple, Dict, Union
 
 from jackdaw.Data import data
 from jackdaw.Utils.Singleton import Singleton
@@ -10,68 +10,8 @@ from jackdaw.Data.ProjectData import RouterComponentData
 from jackdaw.Rendering.ComponentRenderer import ComponentRenderer
 from jackdaw.UI.RouterComponents.MasterOutput import MasterOutputData
 from jackdaw.Rendering.Signal import Signal
-
-
-# A node is a pair (component id, node name)
-class Node(NamedTuple):
-    id: int
-    node: str
-
-
-# A route connects two nodes
-class Route(NamedTuple):
-    from_node: Node
-    to_node: Node
-
-
-# Contains process-safe information
-# relating to the rendering queue.
-class RenderQueue:
-
-    def __init__(self):
-        self.kill_switch = mp.Queue()
-        self.kill_switch.put(False)
-
-        self.queue = mp.Queue()
-        self.queue.put([])
-
-        self.results = mp.Queue()
-        self.results.put(dict())
-
-        self._parents = mp.Queue()
-        self._parents.put(dict())
-
-        self.node_types = mp.Queue()
-        self.node_types.put(dict())
-
-    @property
-    def parents(self) -> Dict[Node, Set[Node]]:
-        par = self._parents.get()
-        self._parents.put(par)
-
-        for n in par:
-            assert n not in par[n]
-
-        return par
-
-    @parents.setter
-    def parents(self, par: Dict[Node, Set[Node]]):
-        self._parents.get()
-        self._parents.put(par)
-
-        for n in par:
-            assert n not in par[n]
-
-    @property
-    def killed(self):
-        killed = self.kill_switch.get()
-        self.kill_switch.put(killed)
-        return killed
-
-    @killed.setter
-    def killed(self, val: bool):
-        self.kill_switch.get()
-        self.kill_switch.put(val)
+from jackdaw.Rendering.Typedefs import *
+from jackdaw.Rendering.RenderQueue import RenderQueue
 
 
 class PriorityRenderer(Singleton):
@@ -98,10 +38,7 @@ class PriorityRenderer(Singleton):
     def render_master(self, start: int, samples: int) -> Tuple[np.ndarray, np.ndarray]:
 
         # Wait for render queue
-        queue = [None]
-        while len(queue) > 0:
-            queue = self._queue.queue.get()
-            self._queue.queue.put(queue)
+        while len(self._queue.queue) > 0:
             time.sleep(0.01)
 
         master_ids: Set[int] = set()
@@ -170,9 +107,7 @@ class PriorityRenderer(Singleton):
 
         # Nodes that are currently in the render queue are invalidated
         # (so that previously-queued render jobs are not forgotten about)
-        old_queue = self._queue.queue.get()
-        self._queue.queue.put(old_queue)
-        invalidated_nodes = invalidated_nodes.union(old_queue)
+        invalidated_nodes = invalidated_nodes.union(self._queue.queue)
 
         # Remove any invalid results
         results = self._queue.results.get()
@@ -192,15 +127,13 @@ class PriorityRenderer(Singleton):
             ntypes[n] = f"{dtypes[n.id]}.output"
         for n in input_nodes:
             ntypes[n] = f"{dtypes[n.id]}.input"
-        self._queue.node_types.put(ntypes)
-
-        # Update parents
-        self._queue.parents = parents
 
         # Update render queue
-        self._queue.queue.get()
         queue = [n for n in PriorityRenderer.render_order(parents) if n in invalidated_nodes]
-        self._queue.queue.put(queue)
+
+        self._queue.parents = parents
+        self._queue.queue = queue
+        self._queue.node_types.put(ntypes)
 
         # Update self
         self._routes = routes
@@ -263,7 +196,7 @@ class PriorityRenderer(Singleton):
     @staticmethod
     def upstream_nodes(node: Node, parents: Dict[Node, Set[Node]]) -> Set[Node]:
 
-        upstream_nodes = parents[node]
+        upstream_nodes = set(parents[node])
         upstream_nodes.add(node)
         while True:
             length_before = len(upstream_nodes)
@@ -300,10 +233,7 @@ class PriorityRenderer(Singleton):
             time.sleep(0.01)
 
             # Get the next node to render
-            to_render: List[Node] = queue.queue.get()
-            node = None if len(to_render) == 0 else to_render.pop(0)
-            queue.queue.put(to_render)
-
+            node = queue.dequeue()
             if node is not None:
                 PriorityRenderer.node_render_loop(node, queue)
 
@@ -317,9 +247,9 @@ class PriorityRenderer(Singleton):
         while not queue.killed:
 
             # Get parents of the node to render
-            all_parents = queue.parents
+            parents = queue.parents
 
-            if node not in all_parents:
+            if node not in parents:
                 return  # This node no longer exists, so no need to render
 
             # Query the results queue
@@ -328,7 +258,7 @@ class PriorityRenderer(Singleton):
 
             # Get results for the parents
             parent_results: Dict[Node, Union[Signal, None]] = dict()
-            for p in all_parents[node]:
+            for p in parents[node]:
                 if p in all_results:
                     parent_results[p] = all_results[p]
                 else:

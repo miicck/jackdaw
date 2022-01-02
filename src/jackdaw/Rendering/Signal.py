@@ -55,5 +55,6 @@ class Signal:
     def sum(signals: Iterable['Signal']) -> 'Signal':
         result = Signal()
         for s in signals:
-            result += s
+            if s is not None:
+                result += s
         return result
