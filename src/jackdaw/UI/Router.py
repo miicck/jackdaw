@@ -38,7 +38,7 @@ class Router(Gtk.Window, Singleton):
         self.on_components_change()
         self.show_all()
 
-    def add_component(self, data_type_name: str, x: int, y: int):
+    def add_component(self, data_type_name: str, x: int, y: int) -> int:
 
         for c in RouterComponentData.__subclasses__():
             if c.__name__ == data_type_name:
@@ -52,7 +52,7 @@ class Router(Gtk.Window, Singleton):
                 wrapper.datatype.value = c.__name__
                 wrapper.component_data = new_data
                 data.router_components[key] = wrapper
-                return
+                return key
 
         raise Exception(f"Unknown RouterComponent data type \"{data_type_name}\"")
 

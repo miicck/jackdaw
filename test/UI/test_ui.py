@@ -1,3 +1,5 @@
+import time
+
 from ..Utils.JackdawTestSession import JackdawTestSession
 from jackdaw.UI.Playlist import Playlist
 from jackdaw.UI.MidiEditor import MidiEditor
@@ -11,6 +13,7 @@ from jackdaw.UI.Router import Router
 from jackdaw.UI.RouterComponent import RouterComponent, NodeExistsException
 from jackdaw.UI.ControlPanel import ControlPanel
 from jackdaw.Gi import Gtk
+from jackdaw.Rendering.Renderer import Renderer
 
 
 def test_control_panel():
@@ -289,6 +292,34 @@ def test_router_connect():
                 data.router_components.pop(comp_id)
                 ids.remove(comp_id)
         assert len(list(rt.components)) == len(ids)
+
+
+def test_router_connect_2():
+    # Check no components were leftover from previous test
+    assert len(data.router_components) == 0
+
+    with JackdawTestSession():
+        rt: Router = Router.instance()
+
+        # Create components
+        masterKey = rt.add_component("MasterOutputData", x=300, y=100)
+        monoKey = rt.add_component("MonoToStereoData", x=200, y=100)
+        sineKey = rt.add_component("SineSignalData", x=100, y=100)
+
+        assert len(data.router_components) == 3
+        assert len(list(rt.components)) == 3
+
+        # Link sine -> mono/stereo -> master
+        rt.on_click_routing_node(monoKey, "Out", False)
+        rt.on_click_routing_node(masterKey, "To Master", True)
+        rt.on_click_routing_node(sineKey, "Out", False)
+        rt.on_click_routing_node(monoKey, "Left", True)
+
+        rr: Renderer = Renderer.instance()
+        left, right = rr.render_master(0, 100)
+
+        assert len(left) == 100
+        assert len(right) == 100
 
 
 def test_playlist_colors():

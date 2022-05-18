@@ -52,10 +52,25 @@ class Renderer(Singleton):
             if route.to_node.id in master_ids:
                 master_nodes.add(route.to_node)
 
-        all_results = self._queue.results.get()
+        all_results: Dict[Node, Signal] = self._queue.results.get()
         self._queue.results.put(all_results)
 
         result = Signal.sum(all_results[n] for n in master_nodes if n in all_results)
+
+        if result.samples != samples:
+
+            master_nodes_info = ""
+            for node in master_nodes:
+                master_nodes_info += f"    Master node {node}\n"
+
+            results_info = ""
+            for node in all_results:
+                results_info += f"    Node {node}\n"
+
+            raise Exception(f"Unexpected number of samples in master result\n"
+                            f"Master nodes:\n{master_nodes_info}"
+                            f"Rendered nodes:\n{results_info}")
+
         return result[0], result[1]
 
     def recalculate_routes(self):
@@ -318,15 +333,22 @@ class Renderer(Singleton):
             assert renderer is not None
 
             # Render
-            input_results = {p.node: parent_results[p] for p in parent_results}
+            input_results: Dict[str, Signal] = {p.node: parent_results[p] for p in parent_results}
+
             result = renderer.render(node.node, chunk * Renderer.CHUNK_SIZE,
                                      Renderer.CHUNK_SIZE, input_results)
 
             if result.samples != Renderer.CHUNK_SIZE:
+
+                input_info = ""
+                for i in input_results:
+                    input_info += input_results[i].info()
+
                 raise Exception(f"Renderer of type \"{renderer.__class__.__name__}\" "
                                 f"rendered the wrong number of samples! "
                                 f"Rendered {result.samples}, expected "
-                                f"{Renderer.CHUNK_SIZE}")
+                                f"{Renderer.CHUNK_SIZE}\n"
+                                f"{input_info}")
 
             results = queue.results.get()
             if node not in results:

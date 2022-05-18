@@ -56,6 +56,12 @@ class Signal:
             self._data[i][0: len(tmp)] = tmp
             self._data[i][start: start + other.samples] = other._data[i]
 
+    def info(self) -> str:
+        ret = ""
+        for key in self._data:
+            ret += f"Channel {key} has {len(self._data[key])} samples\n"
+        return ret
+
     @property
     def samples(self) -> int:
         for channel in self._data:
